@@ -1,0 +1,37 @@
+services:
+  dataset_server:
+    build: ./dataset
+    container_name: dataset
+    image: emnist_data_gen:v1
+    cpus: ${DATASET_CPU}
+    volumes:
+      - emnist_data
+
+  cpu_clients:
+    build: ./clients
+    deploy: 
+      mode: replicated
+      replicas: ${CPU_REPLICAS}
+    container_name: emnist_client_gpu
+    image: emnist_client_cpu:v1
+    cpus: ${CLIENT_CPU}
+    depends_on:
+      - dataset_server
+
+  gpu_clients:
+    build: ./clients
+    container_name: emnist_client_gpu
+    image: emnist_client_gpu:v1
+    cpus: ${CLIENT_CPU}
+    gpus: all
+    depends_on:
+      - dataset_server
+
+  agg_server:
+    build: ./server
+    container_name: emnist_server
+    image: emnist_server:v1
+    cpus: ${SERVER_CPU}
+    
+volumes:
+- emnist_data

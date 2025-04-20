@@ -1,0 +1,10 @@
+Build a global model using federated learning with multiple servers 
+and clients all of which are docker containers.
+The goal is to train a model on EMNIST byClass which will be made available 
+to clients in fixed random permutations of the dataset during client init 
+from the dataset which will be present in a shared volume.
+Implement various federated learning features such as:
+1. Using clustering methods for generating the global model to avoid adversial attacks.
+2. Adding a small amount of noise for each local model trained on a client in order to preserve data privacy before sending it to the server.
+3. Testing and ensuring that the training process is resistant to model poisoning.
+4. Encapsulating this whole process into a single docker compose file in order to scale up/down clients and servers.
