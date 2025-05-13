@@ -9,7 +9,8 @@ class model(nn.Module):
         super().__init__()
         self.model=nn.Sequential(
             nn.Flatten(),
-            nn.Linear(28*28,128),
+            nn.Linear(28*28,256),
+            nn.Linear(256,128),
             nn.Linear(128,output_classes)
         )
     
@@ -62,4 +63,3 @@ class model(nn.Module):
         res=(self-model2)**distance_metric
         res=pow(sum([p.sum() for p in res.parameters()]),1/distance_metric)
         return res
-    

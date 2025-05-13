@@ -5,7 +5,11 @@ services:
     image: emnist_data_gen:v1
     cpus: ${DATASET_CPU}
     volumes:
-      - emnist_data
+      - emnist_dataset
+    ports:
+      - 8000:8000
+    networks:
+      - fed_learning
 
   cpu_clients:
     build: ./clients
@@ -17,6 +21,8 @@ services:
     cpus: ${CLIENT_CPU}
     depends_on:
       - dataset_server
+    networks:
+      - fed_learning
 
   gpu_clients:
     build: ./clients
@@ -26,12 +32,21 @@ services:
     gpus: all
     depends_on:
       - dataset_server
+    networks:
+      - fed_learning
 
   agg_server:
     build: ./server
     container_name: emnist_server
     image: emnist_server:v1
     cpus: ${SERVER_CPU}
+    --networks:
+      - fed_learning
+    --ports:
+      - 5000:5000
     
 volumes:
-- emnist_data
+- emnist_dataset
+
+networks:
+-  fed_learning

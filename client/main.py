@@ -4,10 +4,8 @@ import lightning as L
 import torch
 from lightning.pytorch.callbacks import ModelSummary,EarlyStopping,Timer
 import time
-# import dotenv
 import os
 from common.env_path_fns import load_env_var
-# dotenv.load_dotenv()
 
 torch.set_float32_matmul_precision('medium')
 L.seed_everything(42,workers=True)
@@ -15,10 +13,10 @@ data=PartialEMNISTDataModule()
 model=LitEMNISTClassifier()
 model_metrics={}
 c_model_ver=-1
-DEBUG_MODE=load_env_var('DEBUG_CLIENT','int')#int(os.environ.get('DEBUG_CLIENT'))
+DEBUG_MODE=load_env_var('DEBUG_CLIENT','int')
 if DEBUG_MODE:
     print(os.environ.items())
-for _ in range(load_env_var('COMBINE_STEPS','int')):#int(os.environ.get('COMBINE_STEPS'))
+for _ in range(load_env_var('COMBINE_STEPS','int')):
     while(model.model_ver==c_model_ver):
         model=LitEMNISTClassifier()
         time.sleep(3)

@@ -2,20 +2,16 @@ import torchvision
 import gradio as gr
 import os
 import torch
-# import dotenv
 import time
 import shutil
 from torchvision.datasets import EMNIST
 from torch.utils.data import DataLoader
 from common.env_path_fns import load_env_var
-# dotenv.load_dotenv()
-DS_LOC=load_env_var('DATASET_LOC','path')#os.environ.get('DATASET_LOC')
-FILE_DIR=load_env_var('FILE_DIR','path')#os.environ.get('FILE_DIR')
-BS=load_env_var('BATCH_SIZE','int')#int(os.environ.get('BATCH_SIZE'))
-BF=load_env_var('BATCH_FACTOR','int')#int(os.environ.get('BATCH_FACTOR'))
-SERVER_PORT=load_env_var('DATA_SERVER_PORT','int')#int(os.environ.get('DATA_SERVER_PORT'))
-# os.makedirs(DS_LOC,exist_ok=True)
-# os.makedirs(FILE_DIR,exist_ok=True)
+DS_LOC=load_env_var('DATASET_LOC','path')
+FILE_DIR=load_env_var('FILE_DIR','path')
+BS=load_env_var('BATCH_SIZE','int')
+BF=load_env_var('BATCH_FACTOR','int')
+SERVER_PORT=load_env_var('DATA_SERVER_PORT','int')
 
 ds=EMNIST(root=DS_LOC,split='byclass',download=True,transform=torchvision.transforms.ToTensor())
 server_ds=EMNIST(root=DS_LOC,split='byclass',download=True,transform=torchvision.transforms.ToTensor(),train=False)
