@@ -7,7 +7,6 @@ from torchmetrics.classification import MulticlassAccuracy,MulticlassAveragePrec
 import torch.nn.functional as F
 import gradio as gr
 import os
-import shutil
 from model_classes import model,agg_models
 import agg_strats
 from common.env_path_fns import load_env_var
@@ -34,7 +33,7 @@ gr.set_static_paths(paths=[
 
 def update_model() ->str:
     global g_update_time
-    time_to_update=datetime.now()-g_update_time
+    time_to_update=g_update_time-datetime.now()
     if time_to_update<timedelta(seconds=0):
         updated=agg_weights()
         if updated:
@@ -48,17 +47,16 @@ def update_model() ->str:
 def get_model_weights() ->str:
     f_loc=os.path.join(GLOBAL_MODEL_DIR,f'{model_ver}.pth')
     torch.save(g_model.state_dict(),f_loc)
-    print(f_loc)
+    print(f"current modelfile: {f_loc}")
     return f_loc
 
 def get_model_ver()-> int:
-    print(model_ver)
+    print(f'model_version:{model_ver}')
     return model_ver
 
 def upload_model(model_loc:str) -> None:
     global model_ver
     model_counts[model_ver].add_client_model(model_loc)
-    # shutil.move(model_loc,os.path.join(UPLOAD_MODEL_DIR,f'_{model_ver}_{model_counts[model_ver]}.pth'))
 
 def agg_weights() -> bool:
     global model_ver

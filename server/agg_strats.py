@@ -2,7 +2,8 @@
 module with functions to perform various federated aggregation techniques
 '''
 import torch
-from model_classes import model
+from model_classes import agg_models
+from common.models import model
 from common.env_path_fns import load_env_var
 from torch import nn
 
