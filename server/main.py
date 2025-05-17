@@ -54,7 +54,8 @@ def get_model_ver()-> int:
     print(f'model_version:{model_ver}')
     return model_ver
 
-def upload_model(model_loc:str) -> None:
+def upload_model(model_loc:str,counts:int) -> None:
+    print('uploaded data:',model_loc,counts)
     global model_ver
     model_counts[model_ver].add_client_model(model_loc)
 
@@ -65,16 +66,23 @@ def agg_weights() -> bool:
         model_ver+=1
         model_counts[model_ver].add_global_model(g_model)
         return update
+    return False
 
 with gr.Blocks() as demo:
     gr.Number(value=get_model_ver,every=10,label='get_model_ver')
     gr.File(value=get_model_weights,every=10,label='get_model_weights')
     gr.Text(value=update_model,every=1,label='model update info')
     new_model=gr.File(label='upload_model')
-    new_model.upload(
+    steps=gr.Number(value=0)
+    upload_submit_btn=gr.Button(value='Upload')
+    upload_submit_btn.click(
         upload_model,
-        new_model,
+        [new_model,steps]
     )
+    # new_model.upload(
+    #     upload_model,
+    #     new_model,
+    # )
 
 demo.launch(
     server_name='0.0.0.0',
