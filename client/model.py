@@ -27,8 +27,8 @@ class LitEMNISTClassifier(L.LightningModule):
                 fed_learning:bool=True):
         super().__init__()
         self.model=model(output_classes)
-        self.metrics=metrics
         self.output_classes=output_classes if output_classes else load_env_var('OUTPUT_CLASSES','int')
+        self.metrics=[i(self.output_classes) for i in metrics]
         self.batch_size=load_env_var('BATCH_SIZE','int')
         self.example_input_array=torch.Tensor(self.batch_size,1,28,28)
         self.loss_fn=loss_fn
@@ -48,9 +48,9 @@ class LitEMNISTClassifier(L.LightningModule):
         return optimizer
     
     def convert_data_float(self,tensors:list):
+        tensors[1]=F.one_hot(tensors[1],self.output_classes)
         for i in enumerate(tensors):
             tensors[i[0]]=i[1].float()
-        tensors[1]=F.one_hot(tensors[1],self.output_classes)
         return tensors
     
     def log_metrics(self,loss,phase,pred,target):
