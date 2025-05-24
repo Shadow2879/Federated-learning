@@ -14,8 +14,10 @@ def create_env_file(folder:str,envs:list[str],mock=False,remove=False):
             print(i)
     else:
         if remove:
+            print(path)
             os.remove(path)
-        with open(os.path.join(path,'w')) as f:
+            return
+        with open(path,'w') as f:
             for i in envs:
                 f.write(i+'\n')
 def split_envs(lines:list[str]):
@@ -35,9 +37,9 @@ def read_envs(loc='.envs'):
                 lines.append(line)
     return lines
 
-if __name__ =="__main__":
-    MOCK=True
-    REMOVE=False
+if __name__=="__main__":
+    MOCK=False
+    REMOVE=True
     lines=read_envs()
     folders,vars=split_envs(lines)
     for i in zip(folders,vars):
@@ -45,8 +47,9 @@ if __name__ =="__main__":
         if 'global' in i[0]:
             continue
         if REMOVE:
-            shutil.rmtree(os.path.join(folders,'common'))
-        if not MOCK:
+            print(os.path.join(os.getcwd(),i[0],'common'))
+            shutil.rmtree(os.path.join(os.getcwd(),i[0],'common/'))
+        if not MOCK and not REMOVE:
             shutil.copytree('./common',os.path.join(os.getcwd(),i[0],'common'))
     if not MOCK:
         subprocess.call(["docker","compose","up"])
