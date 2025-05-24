@@ -2,9 +2,9 @@
 Defines a lightning model in for classification tasks on 28x28 images
 '''
 import torch
-import lightning as L
-from torchmetrics.classification import MulticlassAccuracy,MulticlassAveragePrecision,MulticlassRecall
-import torch.nn.functional as F
+# import lightning as L
+# from torchmetrics.classification import MulticlassAccuracy,MulticlassAveragePrecision,MulticlassRecall
+# import torch.nn.functional as F
 import gradio as gr
 import os
 from model_classes import model,agg_models

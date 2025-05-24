@@ -7,7 +7,6 @@ services:
     volumes:
       - emnist_dataset
     ports:
-    # missing
       - ${DATASET_SERVER_PORT}:${DATASET_SERVER_PORT}
     networks:
       - fed_learning
@@ -17,7 +16,6 @@ services:
     deploy: 
       mode: replicated
       replicas: ${CLIENT_CPU_REPLICAS}
-    # container_name: emnist_client_gpu
     image: emnist_client_cpu:${FED_VERSION}
     cpus: ${CLIENT_CPUS}
     depends_on:
@@ -31,7 +29,6 @@ services:
     deploy:
       mode: replicated
       replicas: ${CLIENT_GPU_REPLICAS}
-    # container_name: emnist_client_gpu
     image: emnist_client_cpu:${FED_VERSION}
     cpus: ${CLIENT_CPUS}
     gpus: all
@@ -49,7 +46,6 @@ services:
     --networks:
       - fed_learning
     --ports:
-    # missing
       - ${AGG_SERVER_PORT}:${AGG_SERVER_PORT}
     
 volumes:

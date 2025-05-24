@@ -3,6 +3,7 @@
 import os
 import shutil
 import subprocess
+import argparse
 
 def create_env_file(folder:str,envs:list[str],mock=False,remove=False):
     if 'global' in folder:
@@ -14,7 +15,6 @@ def create_env_file(folder:str,envs:list[str],mock=False,remove=False):
             print(i)
     else:
         if remove:
-            print(path)
             os.remove(path)
             return
         with open(path,'w') as f:
@@ -23,9 +23,9 @@ def create_env_file(folder:str,envs:list[str],mock=False,remove=False):
 def split_envs(lines:list[str]):
     idxs=[i[0] for i in enumerate(lines) if i[1].startswith('#')]
     res=[lines[idxs[-1]+1:] for _ in range(len(idxs))]
-    for i,j,k in zip(idxs[:-1],idxs[1:],range(len(idxs))):
-        [res[k].append(t) for t in lines[i+1:j]]
-    # res.append(lines[idxs[-1]:])
+    for start,end,k in zip(idxs[:-1],idxs[1:],range(len(idxs))):
+        [res[k].append(t) for t in lines[start+1:end]]
+    print(res)
     return [lines[i].replace('#','') for i in idxs],res
 def read_envs(loc='.envs'):
     lines=[]
@@ -38,8 +38,12 @@ def read_envs(loc='.envs'):
     return lines
 
 if __name__=="__main__":
-    MOCK=False
-    REMOVE=True
+    parser=argparse.ArgumentParser(description='A script to automate moving files around which are shared between containers.')
+    parser.add_argument('-m',type=bool,default=True,help='Whether to just show how files would be changed or to apply those changes.')
+    parser.add_argument('-r',type=bool,default=False,help='Whether to remove those files or not.')
+    args=parser.parse_args()
+    MOCK=args.m
+    REMOVE=args.r
     lines=read_envs()
     folders,vars=split_envs(lines)
     for i in zip(folders,vars):
