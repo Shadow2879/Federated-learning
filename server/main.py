@@ -14,15 +14,15 @@ from datetime import datetime,timedelta
 
 model_ver=0
 g_model=model()
-UPLOAD_MODEL_DIR=load_env_var('UPLOAD_MODEL_DIR','path')
-RUNS=load_env_var('RUNS','int')
-UPDATE_FREQ=load_env_var('UPDATE_FREQ','int')
+UPLOAD_MODEL_DIR=load_env_var('AGG_SERVER_UPLOAD_MODEL_DIR','path')
+RUNS=load_env_var('AGG_SERVER_RUNS','int')
+UPDATE_FREQ=load_env_var('AGG_SERVER_UPDATE_FREQ','int')
 model_counts={i:agg_models(
     dir=f'{os.path.join(UPLOAD_MODEL_DIR,str(i))}',
     agg_strat=agg_strats.fed_avg,)
       for i in range(RUNS)}
 model_counts[0].add_global_model(g_model)
-GLOBAL_MODEL_DIR=load_env_var('GLOBAL_MODEL_DIR','path')
+GLOBAL_MODEL_DIR=load_env_var('AGG_SERVER_GLOBAL_MODEL_DIR','path')
 gen_update_time=lambda :datetime.now()+timedelta(seconds=UPDATE_FREQ)
 g_update_time=gen_update_time()
 
@@ -79,13 +79,8 @@ with gr.Blocks() as demo:
         upload_model,
         [new_model,steps]
     )
-    # new_model.upload(
-    #     upload_model,
-    #     new_model,
-    # )
 
 demo.launch(
     server_name='0.0.0.0',
-    server_port=load_env_var('SERVER_PORT','int')
-    
+    server_port=load_env_var('AGG_SERVER_PORT','int')
     )

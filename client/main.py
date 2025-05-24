@@ -12,19 +12,17 @@ torch.set_float32_matmul_precision('medium')
 L.seed_everything(42,workers=True)
 data=PartialEMNISTDataModule()
 model_metrics={}
-DEBUG_MODE=load_env_var('DEBUG_CLIENT','int')
-TRAIN_TIME=load_env_var('TRAIN_DURATION','int')
-COMBINE_STEPS=load_env_var('COMBINE_STEPS','int')
-server=Client(load_env_var('AGG_SERVER_ADDR','str'))
-print(server.view_api())
+DEBUG_MODE=load_env_var('CLIENT_DEBUG_GR_CLIENT','int')
+TRAIN_TIME=load_env_var('CLIENT_TRAIN_DURATION','int')
+COMBINE_STEPS=load_env_var('CLIENT_COMBINE_STEPS','int')
+server=Client(load_env_var('CLIENT_AGG_SERVER_ADDR','addr','AGG_SERVER_PORT'))
+if DEBUG_MODE:
+    print(os.environ.items())
+    print(server.view_api())
 g_model_ver=lambda :server.predict(api_name='/get_model_ver')
 g_model_file=lambda :server.predict(api_name='/get_model_weights')
 g_model_sdict=lambda :torch.load(g_model_file())
 c_model=LitEMNISTClassifier(g_model_file(),g_model_ver(),output_classes=62)
-# c_model.compile() # g++ absent
-
-if DEBUG_MODE:
-    print(os.environ.items())
 for i in range(COMBINE_STEPS):
     while(c_model.model_ver<=i):
         trainer=L.Trainer(

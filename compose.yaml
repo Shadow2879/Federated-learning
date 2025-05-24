@@ -2,12 +2,13 @@ services:
   dataset_server:
     build: ./dataset
     container_name: dataset
-    image: emnist_data_gen:v1
-    cpus: ${DATASET_CPU}
+    image: emnist_data_gen:${FED_VERSION}
+    cpus: ${DATASET_CPUS}
     volumes:
       - emnist_dataset
     ports:
-      - 8000:8000
+    # missing
+      - ${DATASET_SERVER_PORT}:${DATASET_SERVER_PORT}
     networks:
       - fed_learning
 
@@ -15,35 +16,41 @@ services:
     build: ./clients
     deploy: 
       mode: replicated
-      replicas: ${CPU_REPLICAS}
-    container_name: emnist_client_gpu
-    image: emnist_client_cpu:v1
-    cpus: ${CLIENT_CPU}
+      replicas: ${CLIENT_CPU_REPLICAS}
+    # container_name: emnist_client_gpu
+    image: emnist_client_cpu:${FED_VERSION}
+    cpus: ${CLIENT_CPUS}
     depends_on:
       - dataset_server
+      - agg_server
     networks:
       - fed_learning
 
   gpu_clients:
     build: ./clients
-    container_name: emnist_client_gpu
-    image: emnist_client_gpu:v1
-    cpus: ${CLIENT_CPU}
+    deploy:
+      mode: replicated
+      replicas: ${CLIENT_GPU_REPLICAS}
+    # container_name: emnist_client_gpu
+    image: emnist_client_cpu:${FED_VERSION}
+    cpus: ${CLIENT_CPUS}
     gpus: all
     depends_on:
       - dataset_server
+      - agg_server
     networks:
       - fed_learning
 
   agg_server:
     build: ./server
     container_name: emnist_server
-    image: emnist_server:v1
-    cpus: ${SERVER_CPU}
+    image: emnist_server:${FED_VERSION}
+    cpus: ${AGG_SERVER_CPUS}
     --networks:
       - fed_learning
     --ports:
-      - 5000:5000
+    # missing
+      - ${AGG_SERVER_PORT}:${AGG_SERVER_PORT}
     
 volumes:
 - emnist_dataset

@@ -7,7 +7,7 @@ import shutil
 from torchvision.datasets import EMNIST
 from torch.utils.data import DataLoader
 from common.env_path_fns import load_env_var
-DS_LOC='/workspace/datasets' #load_env_var('DATASET_LOC','path')
+DS_LOC=load_env_var('DATASET_LOC','path')
 FILE_DIR=load_env_var('FILE_DIR','path')
 BS=load_env_var('BATCH_SIZE','int')
 BF=load_env_var('BATCH_FACTOR','int')

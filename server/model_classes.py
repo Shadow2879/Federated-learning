@@ -1,4 +1,3 @@
-from datetime import datetime
 import torch
 from common.models import model
 import os   
@@ -18,7 +17,7 @@ class  agg_models():
     def add_global_model(self,model) -> None:
         self.prev_g_model=model
 
-    def add_client_model(self,model_path:str,steps:int=None) -> None:
+    def add_client_model(self,model_path:str,steps:int | None=None) -> None:
         new_mod=model(self.classes)
         shutil.move(model_path,os.path.join(self.dir,f'{len(self.models)}.pth'))
         new_mod.load_state_dict(torch.load(
@@ -29,7 +28,7 @@ class  agg_models():
         self.model_steps.append(steps)
         
     def update(self) ->tuple[model,bool]:
-        assert(self.prev_g_model is not None,"Previous global model not added!")
+        assert self.prev_g_model is not None, "Previous global model not added!"
         try:
             self.new_model=self.agg(self.models,self.prev_g_model)
         except IndexError as e:

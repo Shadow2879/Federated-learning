@@ -20,18 +20,18 @@ class CustDataset(Dataset):
 class PartialEMNISTDataModule(L.LightningDataModule):
     def __init__(self,seed=42,train_val_test_split:list[float]=None):
         super().__init__()
-        self.data_loc=load_env_var('DATA_LOC','path')
-        self.batch_size=load_env_var('BATCH_SIZE','int')
-        self.cpus=load_env_var('CPUS','int')
+        self.data_loc=load_env_var('CLIENT_DATA_LOC','path')
+        self.batch_size=load_env_var('CLIENT_BATCH_SIZE','int')
+        self.cpus=load_env_var('CLIENT_WORKERS','int')
         self.generator=torch.Generator().manual_seed(seed)
         self.splits=torch.tensor(train_val_test_split,requires_grad=False)\
               if train_val_test_split is not None else\
-                  torch.tensor(np.array(load_env_var('DATA_SPLITS','array')).astype(float),requires_grad=False)
+                  torch.tensor(np.array(load_env_var('CLIENT_DATA_SPLITS','array')).astype(float),requires_grad=False)
         self.prepared=False
 
     def prepare_data(self):
         if not self.prepared:
-            self.client=gradio_client.Client(load_env_var('DATA_SERVER_ADDR','str'),
+            self.client=gradio_client.Client(load_env_var('CLIENT_DATA_SERVER_ADDR','addr','DATASET_SERVER_PORT'),
                                             download_files=self.data_loc)
             data_file=self.client.predict(api_name='/serve_client')
             self.data_file=os.path.join(self.data_loc,data_file.split('/')[-1])

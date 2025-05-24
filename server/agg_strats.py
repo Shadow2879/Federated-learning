@@ -7,7 +7,7 @@ from common.models import model
 from common.env_path_fns import load_env_var
 from torch import nn
 
-min_models=load_env_var('MIN_MODELS','int')
+min_models=load_env_var('AGG_SERVER_MIN_MODELS','int')
 def ensure_models(models:list[nn.Module]) -> None:
 
     if len(models)<min_models:

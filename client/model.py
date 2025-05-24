@@ -27,18 +27,15 @@ class LitEMNISTClassifier(L.LightningModule):
                 fed_learning:bool=True):
         super().__init__()
         self.model=model(output_classes)
-        self.output_classes=output_classes if output_classes else load_env_var('OUTPUT_CLASSES','int')
+        self.output_classes=output_classes if output_classes else load_env_var('CLIENT_OUTPUT_CLASSES','int')
         self.metrics=[i(self.output_classes) for i in metrics]
-        self.batch_size=load_env_var('BATCH_SIZE','int')
+        self.batch_size=load_env_var('CLIENT_BATCH_SIZE','int')
         self.example_input_array=torch.Tensor(self.batch_size,1,28,28)
         self.loss_fn=loss_fn
         self.fed_learning=fed_learning
         self.save_hyperparameters('output_classes')
         if self.fed_learning:
-            # self.client=gradio_client.Client(load_env_var('AGG_SERVER_ADDR','str'))
-            # print(self.client.view_api())
-            self.model_ver=model_ver#self.client.predict(api_name='/get_model_ver')
-            # model_wgt_loc=self.client.predict(api_name='/get_model_weights')
+            self.model_ver=model_ver
             model_wgt=torch.load(model_path)
             self.model.load_state_dict(model_wgt)
             print(f'loaded model{self.model_ver}')
