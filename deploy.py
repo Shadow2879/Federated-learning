@@ -38,19 +38,20 @@ def read_envs(loc='.envs'):
     return lines
 
 if __name__=="__main__":
-    parser=argparse.ArgumentParser(description='A script to automate moving files around which are shared between containers.')
-    parser.add_argument('-m',type=bool,default=True,help='Whether to just show how files would be changed or to apply those changes.')
-    parser.add_argument('-r',type=bool,default=False,help='Whether to remove those files or not.')
+    parser=argparse.ArgumentParser(description='A script to automate moving files which are shared between containers and to start up the project.')
+    parser.add_argument('--mock',action='store_true',help='Do a mock run.')
+    parser.add_argument('--rm',action='store_true',help='Remove created files')
     args=parser.parse_args()
-    MOCK=args.m
-    REMOVE=args.r
+    print(args)
+    MOCK=args.mock
+    REMOVE=args.rm
     lines=read_envs()
     folders,vars=split_envs(lines)
     for i in zip(folders,vars):
         create_env_file(i[0],i[1],mock=MOCK,remove=REMOVE)
         if 'global' in i[0]:
             continue
-        if REMOVE:
+        if REMOVE and not MOCK:
             print(os.path.join(os.getcwd(),i[0],'common'))
             shutil.rmtree(os.path.join(os.getcwd(),i[0],'common/'))
         if not MOCK and not REMOVE:
