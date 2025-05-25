@@ -32,7 +32,7 @@ services:
     deploy:
       mode: replicated
       replicas: ${CLIENT_GPU_REPLICAS}
-    image: emnist_client_cpu:${FED_VERSION}
+    image: emnist_client_gpu:${FED_VERSION}
     cpus: ${CLIENT_CPUS}
     gpus: all
     depends_on:
