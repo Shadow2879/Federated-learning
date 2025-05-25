@@ -51,7 +51,7 @@ if __name__=="__main__":
         create_env_file(i[0],i[1],mock=MOCK,remove=REMOVE)
         if 'global' in i[0]:
             continue
-        if REMOVE and not MOCK:
+        if REMOVE:
             print(os.path.join(os.getcwd(),i[0],'common'))
             shutil.rmtree(os.path.join(os.getcwd(),i[0],'common/'))
         if not MOCK and not REMOVE:

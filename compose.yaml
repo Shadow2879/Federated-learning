@@ -28,7 +28,7 @@ services:
 
   gpu_clients:
     build:
-      context: ./clients
+      context: ./client
     deploy:
       mode: replicated
       replicas: ${CLIENT_GPU_REPLICAS}
