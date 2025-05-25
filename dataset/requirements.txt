@@ -2,3 +2,4 @@ gradio
 dotenv
 torch
 torchvision
+dotenv

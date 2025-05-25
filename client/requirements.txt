@@ -1,4 +1,4 @@
 gradio_client
 torchmetrics
 lightning
-# look at using time for training along with torch.compile
+dotenv

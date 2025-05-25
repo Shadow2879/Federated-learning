@@ -5,7 +5,8 @@ import torch
 from lightning.pytorch.callbacks import ModelSummary,EarlyStopping,Timer
 import os
 from common.env_path_fns import load_env_var
-from gradio_client import Client,handle_file
+from common.connect import connect_to_gr_client
+from gradio_client import handle_file
 from datetime import timedelta
 
 torch.set_float32_matmul_precision('medium')
@@ -15,7 +16,7 @@ model_metrics={}
 DEBUG_MODE=load_env_var('CLIENT_DEBUG_GR_CLIENT','int')
 TRAIN_TIME=load_env_var('CLIENT_TRAIN_DURATION','int')
 COMBINE_STEPS=load_env_var('CLIENT_COMBINE_STEPS','int')
-server=Client(load_env_var('CLIENT_AGG_SERVER_ADDR','addr','AGG_SERVER_PORT'))
+server=connect_to_gr_client(load_env_var('CLIENT_AGG_SERVER_ADDR','addr','AGG_SERVER_PORT'))
 if DEBUG_MODE:
     print(os.environ.items())
     print(server.view_api())

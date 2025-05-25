@@ -6,7 +6,7 @@ services:
     image: emnist_data_gen:${FED_VERSION}
     cpus: ${DATASET_CPUS}
     volumes:
-      - emnist_dataset
+      - emnist_dataset :/workspace/datasets
     ports:
       - ${DATASET_SERVER_PORT}:${DATASET_SERVER_PORT}
     networks:
@@ -14,7 +14,7 @@ services:
 
   cpu_clients:
     build:
-      context: ./clients
+      context: ./client
     deploy: 
       mode: replicated
       replicas: ${CLIENT_CPU_REPLICAS}
