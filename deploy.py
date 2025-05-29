@@ -14,7 +14,7 @@ def create_env_file(folder:str,envs:list[str],mock=False,remove=False,printenvs=
         folder=''
     path=os.path.join(os.getcwd(),folder,'.env')
     if showpaths:
-        print('removed: ' if showpaths else '',path)
+        print('removed: ' if remove else 'created: ',path)
     if mock:
         return
     else:
@@ -52,24 +52,28 @@ if __name__=="__main__":
     parser.add_argument('-d','--deploy',action='store_true',help='Start project deployment')
     parser.add_argument('-m','--mock',action='store_true',help='Dont create or remove files.')
     args=parser.parse_args()
-    print('User inputs: ',str([i for i in vars(args).items()]).replace('[','').replace(']',''))
+    print('User inputs:',str([str(i[0])+':'+str(i[1]) for i in vars(args).items()])[1:-1])
     SHOWPATHS=args.showpaths
     REMOVE=args.rm
     DEPLOY=args.deploy
     PRINTENVS=args.printenvs
     MOCK=args.mock
+    if MOCK:
+        print('Mock run')
     lines=read_envs()
     folders,vars=split_envs(lines,PRINTENVS)
     for i in zip(folders,vars):
         create_env_file(i[0],i[1],remove=REMOVE,printenvs=PRINTENVS,showpaths=SHOWPATHS,mock=MOCK)
         if 'global' in i[0]:
             continue
+        path=os.path.join(os.getcwd(),i[0],'common')
         if REMOVE:
             if SHOWPATHS:
-                print('removed: ',os.path.join(os.getcwd(),i[0],'common'))
+                print('removed: ',path)
             if not MOCK:
-                shutil.rmtree(os.path.join(os.getcwd(),i[0],'common/'))
+                shutil.rmtree(path)
         if not REMOVE and not MOCK:
-            shutil.copytree('./common',os.path.join(os.getcwd(),i[0],'common'))
+            print(f'copied ./common to {path}')
+            shutil.copytree('./common',path)
     if DEPLOY and not MOCK:
         subprocess.call(["docker","compose","up"])
