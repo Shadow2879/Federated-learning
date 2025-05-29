@@ -31,9 +31,11 @@ class PartialEMNISTDataModule(L.LightningDataModule):
 
     def prepare_data(self):
         if not self.prepared:
-            self.client=connect_to_gr_client(load_env_var('CLIENT_DATA_SERVER_ADDR','addr','DATASET_SERVER_PORT'),download_files=self.data_loc)
-            # self.client=gradio_client.Client(load_env_var('CLIENT_DATA_SERVER_ADDR','addr','DATASET_SERVER_PORT'),
-            #                                 download_files=self.data_loc)
+            self.client=connect_to_gr_client(
+                load_env_var('CLIENT_DATA_SERVER_ADDR','addr','DATASET_SERVER_PORT'),
+                tries=load_env_var('CLIENT_CONNECTION_TRIES','int'),
+                delay=load_env_var('CLIENT_CONNECTION_DELAY','int'),
+                download_files=self.data_loc)
             data_file=self.client.predict(api_name='/serve_client')
             self.data_file=os.path.join(self.data_loc,data_file.split('/')[-1])
             print(f'moving from {data_file} to {self.data_file}')

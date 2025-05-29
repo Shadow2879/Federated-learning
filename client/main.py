@@ -16,7 +16,13 @@ model_metrics={}
 DEBUG_MODE=load_env_var('CLIENT_DEBUG_GR_CLIENT','int')
 TRAIN_TIME=load_env_var('CLIENT_TRAIN_DURATION','int')
 COMBINE_STEPS=load_env_var('CLIENT_COMBINE_STEPS','int')
-server=connect_to_gr_client(load_env_var('CLIENT_AGG_SERVER_ADDR','addr','AGG_SERVER_PORT'))
+CLIENT_CONNECTION_TRIES=load_env_var('CLIENT_CONNECTION_TRIES','int')
+CLIENT_CONNECTION_DELAY=load_env_var('CLIENT_CONNECTION_DELAY','int')
+server=connect_to_gr_client(
+    load_env_var('CLIENT_AGG_SERVER_ADDR','addr','AGG_SERVER_PORT'),
+    CLIENT_CONNECTION_DELAY,
+    CLIENT_CONNECTION_TRIES,
+    )
 if DEBUG_MODE:
     print(os.environ.items())
     print(server.view_api())

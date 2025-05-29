@@ -5,6 +5,8 @@ services:
     container_name: dataset
     image: emnist_data_gen:${FED_VERSION}
     cpus: ${DATASET_CPUS}
+    stop_timeout: 1m
+    stop_grace_period: 3m
     volumes:
       - emnist_dataset :/workspace/datasets
     ports:
@@ -18,8 +20,10 @@ services:
     deploy: 
       mode: replicated
       replicas: ${CLIENT_CPU_REPLICAS}
-    image: emnist_client_cpu:${FED_VERSION}
+    image: emnist_client:${FED_VERSION}
     cpus: ${CLIENT_CPUS}
+    stop_timeout: 30s
+    stop_grace_period: 3m
     depends_on:
       - dataset_server
       - agg_server
@@ -32,9 +36,11 @@ services:
     deploy:
       mode: replicated
       replicas: ${CLIENT_GPU_REPLICAS}
-    image: emnist_client_gpu:${FED_VERSION}
+    image: emnist_client:${FED_VERSION}
     cpus: ${CLIENT_CPUS}
     gpus: all
+    stop_timeout: 30s
+    stop_grace_period: 3m
     depends_on:
       - dataset_server
       - agg_server
@@ -47,6 +53,8 @@ services:
     container_name: emnist_server
     image: emnist_server:${FED_VERSION}
     cpus: ${AGG_SERVER_CPUS}
+    stop_timeout: 45s
+    stop_grace_period: 3m
     networks:
       - fed
     ports:
