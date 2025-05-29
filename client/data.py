@@ -25,7 +25,7 @@ class PartialEMNISTDataModule(L.LightningDataModule):
         self.cpus=load_env_var('CLIENT_WORKERS','int')
         self.generator=torch.Generator().manual_seed(seed)
         self.splits=torch.tensor(train_val_test_split,requires_grad=False)\
-              if not len(train_val_test_split) else\
+              if len(train_val_test_split)>0 else\
                   torch.tensor(np.array(load_env_var('CLIENT_DATA_SPLITS','array')).astype(float),requires_grad=False)
         self.prepared=False
 
@@ -40,6 +40,7 @@ class PartialEMNISTDataModule(L.LightningDataModule):
             self.data_file=os.path.join(self.data_loc,data_file.split('/')[-1])
             print(f'moving from {data_file} to {self.data_file}')
             shutil.move(data_file,self.data_file)
+            print(self.splits)
             ds=CustDataset(torch.load(self.data_file))
             self.train,self.val,self.test=data.random_split(ds,
                                                     lengths=self.splits,
