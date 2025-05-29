@@ -1,6 +1,5 @@
 from gradio_client import Client
 import time
-from httpcore import ConnectError
 
 def connect_to_gr_client(address:str,delay:int=10,tries:int=10,*args,**kwargs) -> Client:
     for i in range(tries):
@@ -8,8 +7,8 @@ def connect_to_gr_client(address:str,delay:int=10,tries:int=10,*args,**kwargs) -
         try:
             client=Client(address,*args)
             return client
-        except ConnectError as e:
-            print(f"Connection refused, trying again in {delay} seconds.")
+        except Exception as e:
+            print(f"{e}, trying again in {delay} seconds.")
             time.sleep(delay)
             continue
-    raise ConnectionRefusedError(f'Attempting to connect to {address} failed after {tries*delay} seconds.')
+    raise ConnectionAbortedError(f'Attempting to connect to {address} failed after {tries*delay} seconds.')

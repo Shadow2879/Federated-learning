@@ -18,14 +18,14 @@ class CustDataset(Dataset):
         return [i[index] for i in self.data]
 
 class PartialEMNISTDataModule(L.LightningDataModule):
-    def __init__(self,seed=42,train_val_test_split:list[float]=None):
+    def __init__(self,seed=42,train_val_test_split:list[float]=[]):
         super().__init__()
         self.data_loc=load_env_var('CLIENT_DATA_LOC','path')
         self.batch_size=load_env_var('CLIENT_BATCH_SIZE','int')
         self.cpus=load_env_var('CLIENT_WORKERS','int')
         self.generator=torch.Generator().manual_seed(seed)
         self.splits=torch.tensor(train_val_test_split,requires_grad=False)\
-              if train_val_test_split is not None else\
+              if not len(train_val_test_split) else\
                   torch.tensor(np.array(load_env_var('CLIENT_DATA_SPLITS','array')).astype(float),requires_grad=False)
         self.prepared=False
 
