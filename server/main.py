@@ -101,6 +101,7 @@ with gr.Blocks() as demo:
         [new_model,steps]
     )
 #needed for scheduler to stop at the end.
+@asynccontextmanager
 async def lifespan(app:FastAPI):
     periodic_event_scheduler.start()
     yield
