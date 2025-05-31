@@ -1,4 +1,6 @@
 gradio
 dotenv
 lightning
-dotenv
+fastapi
+uvicorn
+apscheduler
