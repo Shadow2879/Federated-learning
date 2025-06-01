@@ -17,31 +17,43 @@ server_ds=EMNIST(root=DS_LOC,split='byclass',download=True,transform=torchvision
 dl=DataLoader(ds,batch_size=BS,shuffle=True,)
 server_dl=DataLoader(server_ds,batch_size=BS,shuffle=False)
 runs=0
-
-def serve_client(num_data_batches=int(len(ds)*torch.rand(1)[0]//(BS*BF)),server=False):
-    global runs
+is_server=False
+def serve_client() -> str:
+    num_data_batches=int(len(ds)*torch.rand(1)[0]//(BS*BF))
+    global runs,is_server
     runs+=1
+    f_name=''
     if runs-1:# prevent generating file before starting server
-        if server:
+        res=[]
+        if is_server:
             f_name=os.path.join(FILE_DIR,'server.pt')
-        #     res=[next(iter(server_dl))]
-        #     for _ in range(len(server_dl)):
-        #         res
-        #     torch.save()
-        # print(num_data_batches)
-        res=[next(iter(dl))]
-        for _ in range(num_data_batches-1):
-            res.append(next(iter(dl)))
-        res=[torch.concat([p[0] for p in res]),torch.concat([p[1] for p in res])]
-        f_name=f'{num_data_batches}_{time.strftime(time.ctime())}.pt'
-        f_name.replace(' ','_')
-        f_name=os.path.join(FILE_DIR,f_name)
+            if 'server.pt' not in os.listdir(FILE_DIR):
+                for data,_ in zip(iter(dl),range(10_000)):
+                    res.append(data)
+                is_server=False
+        else:
+            for data,_ in zip(iter(dl),range(num_data_batches-1)):
+                res.append(data)
+            res=[torch.concat([p[0] for p in res]),torch.concat([p[1] for p in res])]
+            f_name=f'{num_data_batches}_{time.strftime(time.ctime())}.pt'
+            f_name=f_name.replace('  ',' ').replace(' ','_')
+            f_name=os.path.join(FILE_DIR,f_name)
         print(f_name)
         torch.save(res,f_name)
+        print(num_data_batches)
         return f_name
-    
+    raise gr.Error('no data')
+def set_server(y:bool) -> None:
+    global is_server
+    is_server=bool(y)
+    print(is_server)
 with gr.Blocks() as demo:
     gr.File(serve_client,file_count='single',label='data')
+    t=gr.Text(label='server',visible=False,)
+    t.change(
+        set_server,
+        inputs=[t],
+    )
 demo.launch(server_port=SERVER_PORT,server_name='0.0.0.0')
 print(f'data requests: {runs-1}')
 

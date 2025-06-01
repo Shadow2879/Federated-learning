@@ -11,7 +11,7 @@ min_models=load_env_var('AGG_SERVER_MIN_MODELS','int')
 def ensure_models(models:list[nn.Module]) -> None:
 
     if len(models)<min_models:
-        print('not enough models')
+        print(f'need {min_models} but have {len(models)}')
         raise IndexError(f'tried to aggregate {len(models)} but minimum {min_models} required.')
 
 def fed_avg(models:list[nn.Module],prev_global_model:nn.Module)->model:
@@ -22,7 +22,7 @@ def fed_avg(models:list[nn.Module],prev_global_model:nn.Module)->model:
     res/=len(models)
     return res
 
-def fed_nova(models:list[nn.Module],prev_global_model:nn.Module,steps:list[int] | None=None,data_len:int | None=None) -> model:
+def fed_avg_weighted_steps(models:list[nn.Module],prev_global_model:nn.Module,steps:list[int] | None=None,data_len:int | None=None) -> model:
     ensure_models(models)
     if data_len is None or steps is None:
         return fed_avg(models,prev_global_model)

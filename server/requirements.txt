@@ -4,3 +4,6 @@ lightning
 fastapi
 uvicorn
 apscheduler
+gradio_client
+torchmetrics
+tqdm

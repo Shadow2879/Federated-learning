@@ -2,7 +2,10 @@ import torch
 from common.models import model
 import os   
 import shutil
-
+import torch.nn.functional as F
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+from torchmetrics.classification import MulticlassAccuracy,MulticlassAveragePrecision,MulticlassRecall
 class  agg_models():
     def __init__(self,dir,agg_strat,classes=62,data_len:int=100000) -> None:
         self.dir=dir
@@ -36,3 +39,20 @@ class  agg_models():
         else:
             return self.new_model,True
     
+
+def do_test_run(g_model,client,metrics=[MulticlassAccuracy(62),MulticlassAveragePrecision(62),MulticlassRecall(62)]):
+    client.predict('server',api_name='/set_server')
+    data=client.predict(api_name='/serve_client')
+    test_data=torch.load(data)
+    dl=DataLoader(test_data,batch_size=int(len(test_data)//1024))
+    g_model.eval()
+    with torch.no_grad() and torch.autocast(device_type='cpu') and tqdm(dl) as pbar:
+        for batch in dl:
+            stats={}
+            inputs,targets=batch
+            outputs=g_model(inputs)
+            stats['loss']=F.mse_loss(outputs,targets)
+            for metric in metrics:
+                stats[metric._get_name()]=metric(outputs,targets).mean()
+            pbar.set_description(stats)
+            pbar.update(1)
