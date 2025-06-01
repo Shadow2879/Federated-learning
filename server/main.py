@@ -110,5 +110,5 @@ async def lifespan(app:FastAPI):
 app=FastAPI(lifespan=lifespan)
 app=gr.mount_gradio_app(app,demo,path='/')
 uvicorn.run(app,host='0.0.0.0',port=load_env_var('AGG_SERVER_PORT','int'))
-
-
+# add code in order to run test runs in the background while waiting for update using background scheduler +process pool exec.
+# integrate it with the frontend.
