@@ -28,7 +28,7 @@ def serve_client() -> str:
         if is_server:
             f_name=os.path.join(FILE_DIR,'server.pt')
             if 'server.pt' not in os.listdir(FILE_DIR):
-                for data,_ in zip(iter(dl),range(10_000)):
+                for data,_ in zip(iter(dl),range(100_000)):
                     res.append(data)
                 is_server=False
         else:
@@ -42,7 +42,7 @@ def serve_client() -> str:
         torch.save(res,f_name)
         print(num_data_batches)
         return f_name
-    raise gr.Error('no data')
+    # raise gr.Error('no data')
 def set_server(y:bool) -> None:
     global is_server
     is_server=bool(y)

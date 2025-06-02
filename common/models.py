@@ -178,7 +178,7 @@ class PartialEMNISTDataModule(L.LightningDataModule):
         self.batch_size=batch_size
         self.cpus=cpus
         self.generator=torch.Generator().manual_seed(seed)
-        self.splits=torch.tensor(np.array(splits),requires_grad=False)
+        self.splits=torch.tensor(np.array(splits,dtype=np.float32),requires_grad=False)
         self.prepared=False
         self.delay=delay
         self.tries=tries

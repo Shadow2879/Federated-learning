@@ -9,7 +9,7 @@ import agg_strats
 from common.env_path_fns import load_env_var
 from datetime import datetime,timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.executors.pool import ThreadPoolExecutor,ProcessPoolExecutor
+from apscheduler.executors.pool import ThreadPoolExecutor
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from common.models import LitEMNISTClassifier,model,PartialEMNISTDataModule
@@ -31,6 +31,7 @@ DATA_LOC=load_env_var('AGG_SERVER_DATA_LOC','path')
 DATA_BATCH_SIZE=load_env_var('AGG_SERVER_BATCH_SIZE','int')
 DATA_WORKERS=load_env_var('AGG_SERVER_DATA_WORKERS','int')
 model_ver=0
+run_ver=0
 g_model=model()
 models={i:agg_models(
     dir=f'{os.path.join(UPLOAD_MODEL_DIR,str(i))}',
@@ -42,10 +43,10 @@ gen_update_time=lambda :datetime.now()+timedelta(seconds=UPDATE_FREQ)
 g_update_time=gen_update_time()
 periodic_event_scheduler=BackgroundScheduler(
     default_executor='threadpool',
-    executors={'threadpool':ThreadPoolExecutor(2),'processpool':ProcessPoolExecutor(1)})
+    executors={'threadpool':ThreadPoolExecutor(10)})
 model_counts=pd.DataFrame(np.zeros(RUNS),columns=['uploaded models']).T
 model_update_status=""
-run_op=''
+run_op={}
 gr.set_static_paths(paths=[
     os.path.join(os.getcwd(),GLOBAL_MODEL_DIR),
     os.path.join(os.getcwd(),UPLOAD_MODEL_DIR)
@@ -95,8 +96,12 @@ def get_models() -> None:
         model_counts[i]=len(models[i].models)
 
 def test_run() -> None:
-    print("Periodic model evaluation started")
-    global model_ver,run_op
+    global model_ver,run_op,run_ver
+    if run_ver>model_ver:
+        return
+    else:
+        print("Periodic model evaluation started")
+        run_ver+=1
     litmodel=LitEMNISTClassifier(get_model_weights(),
                         model_ver,
                         metrics=[MulticlassAccuracy,
@@ -117,13 +122,14 @@ def test_run() -> None:
         enable_progress_bar=True,
         enable_model_summary=True
     )
-    run_op=trainer.test(litmodel,datamodule=litdata)
+    run_op[model_ver]=trainer.test(litmodel,datamodule=litdata)
+    
 
-periodic_event_scheduler.add_job(update_model,trigger='interval',seconds=1)
+jobid=periodic_event_scheduler.add_job(update_model,trigger='interval',seconds=1)
 periodic_event_scheduler.add_job(get_model_ver,trigger='interval',seconds=1)
 periodic_event_scheduler.add_job(get_model_weights,trigger='interval',seconds=1)
 periodic_event_scheduler.add_job(get_models,trigger='interval',seconds=1)
-periodic_event_scheduler.add_job(test_run,trigger='interval',seconds=UPDATE_FREQ,max_instances=3,executor='threadpool')
+periodic_event_scheduler.add_job(test_run,trigger='interval',seconds=1,max_instances=4)
 
 with gr.Blocks() as demo:
     with gr.Row():
@@ -142,7 +148,7 @@ with gr.Blocks() as demo:
         [new_model,steps]
     )
     with gr.Row():
-        gr.TextArea(run_op)
+        gr.TextArea(lambda:run_op,every=1,label='global model performance details')
         
 #needed for scheduler to stop at the end.
 @asynccontextmanager
@@ -156,5 +162,3 @@ async def lifespan(app:FastAPI):
 app=FastAPI(lifespan=lifespan)
 app=gr.mount_gradio_app(app,demo,path='/')
 uvicorn.run(app,host='0.0.0.0',port=SERVER_PORT)
-# add code in order to run test runs in the background while waiting for update using background scheduler +process pool exec.
-# integrate it with the frontend.
