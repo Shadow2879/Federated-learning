@@ -1,6 +1,7 @@
 gradio
 dotenv
 lightning
+pandas
 fastapi
 uvicorn
 apscheduler

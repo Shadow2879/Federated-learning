@@ -1,3 +1,6 @@
+'''
+    handles loading .env variables 
+'''
 import os
 import dotenv
 from typing import Literal
@@ -22,12 +25,12 @@ def defaults(var,type):
             case "str":
                 var=''
             case "array":
-                var=[]
+                var=''
             case default:
                 raise NotImplementedError(f'no default value for  type "{type}" env vars')
     return var
 
-def load_env_var(key:str,type:Literal['int','path','str','array','addr'],port_key:str | None=None,arr_sep=',',) ->int | str | list:
+def load_env_var(key:str,type:Literal['int','path','str','array','addr'],port_key:str | None=None,arr_sep=',',) ->int | str | list[str]:
     '''
     loads an env variable and transfroms it based on type.
 
@@ -66,4 +69,10 @@ def load_env_var(key:str,type:Literal['int','path','str','array','addr'],port_ke
             var=var+':'+addr_port
         case default:
             raise NotImplementedError(f'loading env vars with type {type} is not yet implemented')
-    return var
+        
+    if isinstance(var,int):
+        return var
+    elif isinstance(var,str):
+        return var
+    else:
+        return var

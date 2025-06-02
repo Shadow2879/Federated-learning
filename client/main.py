@@ -1,9 +1,7 @@
-from data import PartialEMNISTDataModule
-from model import LitEMNISTClassifier
+from common.models import LitEMNISTClassifier,PartialEMNISTDataModule
 import lightning as L
-import torch
+import torch,os
 from lightning.pytorch.callbacks import ModelSummary,EarlyStopping,Timer
-import os
 from common.env_path_fns import load_env_var
 from common.connect import connect_to_gr_client
 from gradio_client import handle_file
@@ -11,21 +9,30 @@ from datetime import timedelta
 
 torch.set_float32_matmul_precision('medium')
 L.seed_everything(42,workers=True)
-data=PartialEMNISTDataModule()
 model_metrics={}
 DEBUG_MODE=load_env_var('CLIENT_DEBUG_GR_CLIENT','int')
 TRAIN_TIME=load_env_var('CLIENT_TRAIN_DURATION','int')
 COMBINE_STEPS=load_env_var('CLIENT_COMBINE_STEPS','int')
 CLIENT_CONNECTION_TRIES=load_env_var('CLIENT_CONNECTION_TRIES','int')
 CLIENT_CONNECTION_DELAY=load_env_var('CLIENT_CONNECTION_DELAY','int')
+data=PartialEMNISTDataModule(
+    load_env_var('CLIENT_DATA_LOC','path'),
+    load_env_var('DATA_SERVER_ADDR','addr','DATASET_SERVER_PORT'),
+    load_env_var('CLIENT_DATA_SPLITS','array'),
+    delay=CLIENT_CONNECTION_DELAY,
+    tries=CLIENT_CONNECTION_TRIES,
+    batch_size=load_env_var('CLIENT_BATCH_SIZE','int'),
+    cpus=load_env_var('CLIENT_WORKERS','int')
+)
 server=connect_to_gr_client(
-    load_env_var('CLIENT_AGG_SERVER_ADDR','addr','AGG_SERVER_PORT'),
+    load_env_var('AGG_SERVER_ADDR','addr','AGG_SERVER_PORT'),
     CLIENT_CONNECTION_DELAY,
     CLIENT_CONNECTION_TRIES,
     )
 if DEBUG_MODE:
     print(os.environ.items())
     print(server.view_api())
+    print(data.client.view_api())
 g_model_ver=lambda :server.predict(api_name='/get_model_ver')
 g_model_file=lambda :server.predict(api_name='/get_model_weights')
 g_model_sdict=lambda :torch.load(g_model_file())

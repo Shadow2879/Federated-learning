@@ -2,12 +2,9 @@ import torch
 from common.models import model
 import os   
 import shutil
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-from torchmetrics.classification import MulticlassAccuracy,MulticlassAveragePrecision,MulticlassRecall
+
 class  agg_models():
-    def __init__(self,dir,agg_strat,classes=62,data_len:int=100000) -> None:
+    def __init__(self,dir,agg_strat,classes,def_steps:int=10000) -> None:
         self.dir=dir
         os.makedirs(dir,exist_ok=True)
         self.models=[]
@@ -15,7 +12,7 @@ class  agg_models():
         self.model_steps=[]
         self.agg=agg_strat
         self.classes=classes
-        self.data_len=data_len
+        self.def_steps=def_steps
 
     def add_global_model(self,model) -> None:
         self.prev_g_model=model
@@ -28,6 +25,8 @@ class  agg_models():
             weights_only=True
             ))
         self.models.append(new_mod)
+        if steps is None:
+            steps=self.def_steps
         self.model_steps.append(steps)
         
     def update(self) ->tuple[model,bool]:
@@ -38,21 +37,3 @@ class  agg_models():
             return self.prev_g_model,False
         else:
             return self.new_model,True
-    
-
-def do_test_run(g_model,client,metrics=[MulticlassAccuracy(62),MulticlassAveragePrecision(62),MulticlassRecall(62)]):
-    client.predict('server',api_name='/set_server')
-    data=client.predict(api_name='/serve_client')
-    test_data=torch.load(data)
-    dl=DataLoader(test_data,batch_size=int(len(test_data)//1024))
-    g_model.eval()
-    with torch.no_grad() and torch.autocast(device_type='cpu') and tqdm(dl) as pbar:
-        for batch in dl:
-            stats={}
-            inputs,targets=batch
-            outputs=g_model(inputs)
-            stats['loss']=F.mse_loss(outputs,targets)
-            for metric in metrics:
-                stats[metric._get_name()]=metric(outputs,targets).mean()
-            pbar.set_description(stats)
-            pbar.update(1)
