@@ -8,3 +8,4 @@ apscheduler
 gradio_client
 torchmetrics
 tqdm
+mlflow

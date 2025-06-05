@@ -2,18 +2,18 @@
 module with functions to perform various federated aggregation techniques
 '''
 import torch
-from common.models import model
+from common.models import NNmodel
 from common.env_path_fns import load_env_var
 from torch import nn
 
 min_models=load_env_var('AGG_SERVER_MIN_MODELS','int')
-def ensure_models(models:list[nn.Module]) -> None:
+def ensure_models(models:list[NNmodel]) -> None:
 
     if len(models)<min_models:
         print(f'need {min_models} but have {len(models)}')
         raise IndexError(f'tried to aggregate {len(models)} but minimum {min_models} required.')
 
-def fed_avg(models:list[nn.Module],prev_global_model:nn.Module)->model:
+def fed_avg(models:list[NNmodel],prev_global_model:NNmodel)->NNmodel:
     ensure_models(models)
     res=models[0]
     for i in range(len(models)):
@@ -21,7 +21,7 @@ def fed_avg(models:list[nn.Module],prev_global_model:nn.Module)->model:
     res/=len(models)
     return res
 
-def fed_avg_weighted_steps(models:list[nn.Module],prev_global_model:nn.Module,steps:list[int] | None=None,data_len:int | None=None) -> model:
+def fed_avg_weighted_steps(models:list[NNmodel],prev_global_model:NNmodel,steps:list[int] | None=None,data_len:int | None=None) -> NNmodel:
     ensure_models(models)
     if data_len is None or steps is None:
         return fed_avg(models,prev_global_model)
@@ -31,7 +31,7 @@ def fed_avg_weighted_steps(models:list[nn.Module],prev_global_model:nn.Module,st
         res=res+i[1]*(steps[i[0]]/data_len)
     return res
     
-def fed_prox(models:list[nn.Module],prev_global_model:nn.Module,proximal_term:float=0.5) -> model:
+def fed_prox(models:list[NNmodel],prev_global_model:NNmodel,proximal_term:float=0.5) -> NNmodel:
     ensure_models(models)
     res=((models[0]-prev_global_model)**2)*(proximal_term/2)
     for i in models:
@@ -40,9 +40,9 @@ def fed_prox(models:list[nn.Module],prev_global_model:nn.Module,proximal_term:fl
     res+=prev_global_model
     return res
 
-def select_clients(models:list[nn.Module],prev_global_model:nn.Module,power:int=2,ratio:float=0.8) ->list[model]:
+def select_clients(models:list[NNmodel],prev_global_model:NNmodel,power:int=2,ratio:float=0.8) ->torch.Tensor:
     ensure_models(models)
-    n=len(models)*(1 if len(models)*ratio>min_models else ratio)
+    n=int(len(models)*(1 if len(models)*ratio>min_models else ratio))
     distances=[]
     for i in models:
         distances.append(i.get_distance(prev_global_model,power))

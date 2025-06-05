@@ -1,5 +1,5 @@
 import torch
-from common.models import model
+from common.models import NNmodel
 import os   
 import shutil
 
@@ -18,7 +18,7 @@ class  agg_models():
         self.prev_g_model=model
 
     def add_client_model(self,model_path:str,steps:int | None=None) -> None:
-        new_mod=model(self.classes)
+        new_mod=NNmodel(self.classes)
         shutil.move(model_path,os.path.join(self.dir,f'{len(self.models)}.pth'))
         new_mod.load_state_dict(torch.load(
             os.path.join(self.dir,f'{len(self.models)}.pth'),
@@ -29,7 +29,7 @@ class  agg_models():
             steps=self.def_steps
         self.model_steps.append(steps)
         
-    def update(self) ->tuple[model,bool]:
+    def update(self) ->tuple[NNmodel,bool]:
         assert self.prev_g_model is not None, "Previous global model not added!"
         try:
             self.new_model=self.agg(self.models,self.prev_g_model)

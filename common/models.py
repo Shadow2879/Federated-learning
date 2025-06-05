@@ -3,7 +3,6 @@
 '''
 from torch import nn
 from collections import OrderedDict
-import torchmetrics
 import torch
 import torch.nn.functional as F
 from torchmetrics.classification import MulticlassAccuracy,MulticlassPrecision,MulticlassRecall
@@ -14,9 +13,11 @@ import lightning as L
 import shutil
 from torch.utils.data import random_split,DataLoader,Dataset
 import os
-class model(nn.Module):
+from typing import Sequence
+class NNmodel(nn.Module):
     '''
-    Torch module containing the model architecture, forward pass and operator overloading for +, -, *, /
+    Torch module containing the model architecture, forward pass and operator overloading for +, -, *, /, ** 
+    and a function to see how similar the params of a model are with another.
     '''
     def __init__(self,output_classes=62):
         super().__init__()
@@ -34,7 +35,7 @@ class model(nn.Module):
         res=OrderedDict()
         for keys in self.state_dict().keys():
             res[keys]=self.state_dict()[keys]+model2.state_dict()[keys]
-        res_model=model()
+        res_model=NNmodel()
         res_model.load_state_dict(res)
         return res_model
     
@@ -42,7 +43,7 @@ class model(nn.Module):
         res=OrderedDict()
         for keys in self.state_dict().keys():
             res[keys]=self.state_dict()[keys]-model2.state_dict()[keys]
-        res_model=model()
+        res_model=NNmodel()
         res_model.load_state_dict(res)
         return res_model
     
@@ -50,7 +51,7 @@ class model(nn.Module):
         res=OrderedDict()
         for keys in self.state_dict().keys():
             res[keys]=self.state_dict()[keys]*val
-        res_model=model()
+        res_model=NNmodel()
         res_model.load_state_dict(res)
         return res_model
     
@@ -58,7 +59,7 @@ class model(nn.Module):
         res=OrderedDict()
         for keys in self.state_dict().keys():
             res[keys]=self.state_dict()[keys]/val
-        res_model=model()
+        res_model=NNmodel()
         res_model.load_state_dict(res)
         return res_model
     
@@ -66,11 +67,11 @@ class model(nn.Module):
         res=OrderedDict()
         for keys in self.state_dict().keys():
             res[keys]=self.state_dict()[keys]**val
-        res_model=model()
+        res_model=NNmodel()
         res_model.load_state_dict(res)
         return res_model
     
-    def get_distance(self,model2,distance_metric=2):
+    def get_distance(self,model2,distance_metric:int=2):
         if distance_metric %2 != 0 and distance_metric != 1:
             raise NotImplementedError
         res=(self-model2)**distance_metric
@@ -85,14 +86,14 @@ class LitEMNISTClassifier(L.LightningModule):
             self,
             model_path:str,
             model_ver:int,
-            metrics:list[torchmetrics.Metric]=[
+            metrics:list=[
                 MulticlassAccuracy,MulticlassPrecision,MulticlassRecall,
                 ],
                 output_classes: int=0,
                 loss_fn=torch.nn.MSELoss(),
                 fed_learning:bool=True):
         super().__init__()
-        self.model=model(output_classes)
+        self.model=NNmodel(output_classes)
         self.output_classes=output_classes if output_classes else load_env_var('OUTPUT_CLASSES','int')
         self.metrics=[i(self.output_classes,average='macro') for i in metrics]
         self.batch_size=load_env_var('CLIENT_BATCH_SIZE','int')
@@ -117,12 +118,22 @@ class LitEMNISTClassifier(L.LightningModule):
         return tensors
     
     def log_metrics(self,loss,phase,pred,target):
-        self.log(f'{phase}_loss',loss.mean(),prog_bar=True,logger=True)
+        self.log(f'{phase}_loss_epoch',loss.mean(),prog_bar=True,logger=True,on_step=False,on_epoch=True)
+        self.log(f'{phase}_loss_step',loss.mean(),prog_bar=True,logger=True,on_step=True,on_epoch=False)
         for i in self.metrics:
             self.log(
-                f'{phase}_{i._get_name()}',
+                f'{phase}_{i._get_name()}_epoch',
                 i.to(pred)(pred,target).mean(),
                 on_epoch=True,
+                on_step=False,
+                logger=True,
+                prog_bar=True
+            )
+            self.log(
+                f'{phase}_{i._get_name()}_step',
+                i.to(pred)(pred,target).mean(),
+                on_epoch=False,
+                on_step=True,
                 logger=True,
                 prog_bar=True
             )
@@ -166,7 +177,7 @@ class PartialEMNISTDataModule(L.LightningDataModule):
             self,
             data_loc:str,
             client_addr:str,
-            splits:list[float | int],
+            splits:Sequence[int | float | str],
             seed:int=42,
             delay:int | float=10,
             tries:int=10,
@@ -178,7 +189,8 @@ class PartialEMNISTDataModule(L.LightningDataModule):
         self.batch_size=batch_size
         self.cpus=cpus
         self.generator=torch.Generator().manual_seed(seed)
-        self.splits=torch.tensor(np.array(splits,dtype=np.float32),requires_grad=False)
+        self.splits=np.array(splits,dtype=np.float32)
+        self.splits/=self.splits.sum()
         self.prepared=False
         self.delay=delay
         self.tries=tries
@@ -197,7 +209,7 @@ class PartialEMNISTDataModule(L.LightningDataModule):
             shutil.move(data_file,self.data_file)
             ds=CustDataset(torch.load(self.data_file))
             self.train,self.val,self.test=random_split(ds,
-                                                    lengths=self.splits,
+                                                    lengths=self.splits.tolist(),
                                                     generator=self.generator)
             self.prepared=True
     

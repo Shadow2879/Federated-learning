@@ -12,11 +12,15 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from common.models import LitEMNISTClassifier,model,PartialEMNISTDataModule
+from common.models import LitEMNISTClassifier,NNmodel,PartialEMNISTDataModule
 from torchmetrics.classification import MulticlassAccuracy,MulticlassRecall,MulticlassF1Score,MulticlassPrecision
 import lightning as L
 import numpy as np
 import pandas as pd
+from lightning.pytorch.loggers import MLFlowLogger
+
+torch.set_float32_matmul_precision('medium')
+L.seed_everything(42,workers=True)
 
 UPLOAD_MODEL_DIR=load_env_var('AGG_SERVER_UPLOAD_MODEL_DIR','path')
 RUNS=load_env_var('AGG_SERVER_RUNS','int')
@@ -30,9 +34,14 @@ DATA_TRIES=load_env_var('AGG_SERVER_CONNECTION_TRIES','int')
 DATA_LOC=load_env_var('AGG_SERVER_DATA_LOC','path')
 DATA_BATCH_SIZE=load_env_var('AGG_SERVER_BATCH_SIZE','int')
 DATA_WORKERS=load_env_var('AGG_SERVER_DATA_WORKERS','int')
+MLFLOW_EXP_NAME=load_env_var('MLFLOW_EXP_NAME','str')
+MLFLOW_TAG=load_env_var('AGG_MLFLOW_TAG','str')
+# can possibly be loaded by default by MLFlowlogger when using key MLFLOW_TRACKING_URI
+# MLFLOW_SERVER=load_env_var('MLFLOW_SERVER_ADDR','str','MLFLOW_SERVER_PORT')
+
 model_ver=0
 run_ver=0
-g_model=model()
+g_model=NNmodel()
 models={i:agg_models(
     dir=f'{os.path.join(UPLOAD_MODEL_DIR,str(i))}',
     classes=OUTPUT_CLASSES,
@@ -69,18 +78,18 @@ def get_model_weights() ->str:
     global model_ver
     f_loc=os.path.join(GLOBAL_MODEL_DIR,f'{model_ver}.pth')
     torch.save(g_model.state_dict(),f_loc)
-    # print(f"current modelfile: {f_loc}")
+    print(f"current modelfile: {f_loc}")
     return f_loc
 
 def get_model_ver()-> int:
     global model_ver
-    # print(f'model_version:{model_ver}')
+    print(f'model_version:{model_ver}')
     return model_ver
 
 def upload_model(model_loc:str,counts:int) -> None:
-    # print('uploaded data:',model_loc,counts)
+    print('uploaded data:',model_loc,counts)
     global model_ver
-    models[model_ver].add_client_model(model_loc)
+    models[model_ver].add_client_model(model_loc,counts)
 
 def agg_weights() -> bool:
     global model_ver,g_model
@@ -120,7 +129,12 @@ def test_run() -> None:
     trainer=L.Trainer(
         max_epochs=1,
         enable_progress_bar=True,
-        enable_model_summary=True
+        enable_model_summary=True,
+        logger=MLFlowLogger(
+            MLFLOW_EXP_NAME,
+            tags={'device':'MLFLOW_TAG'},
+            synchronous=False,
+        )
     )
     run_op[model_ver]=trainer.test(litmodel,datamodule=litdata)
     

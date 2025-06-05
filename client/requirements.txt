@@ -2,3 +2,4 @@ gradio_client
 torchmetrics
 lightning
 dotenv
+mlflow

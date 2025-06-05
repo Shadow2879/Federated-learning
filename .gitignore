@@ -6,3 +6,4 @@
 exp.ipynb
 **/models/
 /server/server
+**/lightning_logs/

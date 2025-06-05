@@ -42,6 +42,7 @@ def serve_client() -> str:
         torch.save(res,f_name)
         print(num_data_batches)
         return f_name
+    return ''
     # raise gr.Error('no data')
 def set_server(y:bool) -> None:
     global is_server
