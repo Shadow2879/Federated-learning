@@ -1,8 +1,7 @@
 '''
     handles loading .env variables 
 '''
-import os
-import dotenv
+import os, dotenv
 from typing import Literal,overload,Any
 
 def get_path(loc):

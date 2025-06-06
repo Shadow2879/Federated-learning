@@ -1,8 +1,4 @@
-import gradio as gr
-import os
-import torch
-import time
-import shutil
+import gradio as gr, os, torch, time, shutil, gc
 from torchvision.datasets import EMNIST
 from torch.utils.data import DataLoader
 from torchvision.transforms import ToTensor,Compose,Normalize
@@ -36,7 +32,7 @@ def serve_client() -> str | None:
         if is_server:
             f_name=os.path.join(FILE_DIR,'server.pt')
             if 'server.pt' not in os.listdir(FILE_DIR):
-                for data,_ in zip(iter(server_dl),range(1_000_000)):
+                for data,i in zip(iter(server_dl),range(1_000_000)):
                     res.append(data)
                 res=[torch.concat([p[0] for p in res]),torch.concat([p[1] for p in res])]
                 is_server=False
@@ -47,9 +43,11 @@ def serve_client() -> str | None:
             f_name=f'{num_data_batches}_{time.strftime(time.ctime())}.pt'
             f_name=f_name.replace('  ',' ').replace(' ','_')
             f_name=os.path.join(FILE_DIR,f_name)
-        print(f_name)
+            print(f'{num_data_batches} for client generated.')
+        print(f'generated file: {f_name}')
         torch.save(res,f_name)
-        print(num_data_batches)
+        del res
+        gc.collect()
         return f_name
     return None
 

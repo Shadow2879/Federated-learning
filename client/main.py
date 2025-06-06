@@ -1,6 +1,5 @@
 from common.models import LitEMNISTClassifier,PartialEMNISTDataModule
-import lightning as L
-import torch,os
+import lightning as L, torch, os
 from lightning.pytorch.callbacks import ModelSummary,EarlyStopping,Timer
 from common.env_path_fns import load_env_var
 from common.connect import connect_to_gr_client
@@ -10,7 +9,7 @@ from lightning.pytorch.loggers import MLFlowLogger
 
 torch.set_float32_matmul_precision('medium')
 L.seed_everything(42,workers=True)
-model_metrics={}
+
 DEBUG_MODE=load_env_var('DEBUG_MODE','bool')
 TRAIN_TIME=load_env_var('CLIENT_TRAIN_DURATION','int')
 COMBINE_STEPS=load_env_var('CLIENT_COMBINE_STEPS','int')
@@ -58,7 +57,8 @@ server=connect_to_gr_client(
 if DEBUG_MODE:
     print(os.environ.items())
     print(server.view_api())
-    # print(data.client.view_api())
+    
+model_metrics={}
 g_model_ver=lambda :server.predict(api_name='/get_model_ver')
 g_model_file=lambda :server.predict(api_name='/get_model_weights')
 g_model_sdict=lambda :torch.load(g_model_file())

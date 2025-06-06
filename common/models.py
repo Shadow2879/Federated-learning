@@ -3,15 +3,11 @@
 '''
 from torch import nn
 from collections import OrderedDict
-import torch
+import torch, numpy as np, lightning as L, shutil, os
 import torch.nn.functional as F
 from torchmetrics.classification import MulticlassAccuracy,MulticlassPrecision,MulticlassRecall
 from common.connect import connect_to_gr_client
-import numpy as np
-import lightning as L
-import shutil
 from torch.utils.data import random_split,DataLoader,Dataset
-import os
 from typing import Sequence
 class NNmodel(nn.Module):
     '''
@@ -23,8 +19,11 @@ class NNmodel(nn.Module):
         self.model=nn.Sequential(
             nn.Flatten(),
             nn.Linear(28*28,256),
+            nn.LeakyReLU(),
             nn.Linear(256,128),
-            nn.Linear(128,output_classes)
+            nn.LeakyReLU(),
+            nn.Linear(128,output_classes),
+            nn.ReLU(),
         )
     
     def forward(self,x):
@@ -89,7 +88,7 @@ class LitEMNISTClassifier(L.LightningModule):
                 MulticlassAccuracy,MulticlassPrecision,MulticlassRecall,
                 ],
                 output_classes: int=62,
-                loss_fn=torch.nn.MSELoss(),
+                loss_fn=torch.nn.CrossEntropyLoss(reduction='mean'),
                 batch_size=32,
                 fed_learning:bool=True):
         super().__init__()

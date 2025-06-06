@@ -1,7 +1,5 @@
-import torch
+import torch, shutil, os
 from common.models import NNmodel
-import os   
-import shutil
 
 class  agg_models():
     def __init__(self,dir,agg_strat,classes,def_steps:int=10000) -> None:
