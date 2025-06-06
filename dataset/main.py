@@ -14,11 +14,11 @@ DS_LOC=load_env_var('DATASET_LOC','path')
 FILE_DIR=load_env_var('DATASET_FILE_DIR','path')
 BS=load_env_var('DATASET_BATCH_SIZE','int')
 BF=load_env_var('DATASET_BATCH_FACTOR','int')
-SERVER_PORT=load_env_var('DATASET_SERVER_PORT','int')
+DATA_SERVER_ADDR,SERVER_PORT=load_env_var('DATA_SERVER_ADDR','addr','DATA_SERVER_PORT')
 ds=EMNIST(root=DS_LOC,split='byclass',download=True,transform=Compose([ToTensor(),Normalize(0.1736,0.3316)]))
 server_ds=EMNIST(root=DS_LOC,split='byclass',download=True,transform=Compose([ToTensor(),Normalize(0.1736,0.3316)]),train=False)
 dl=DataLoader(ds,batch_size=BS,shuffle=True,)
-server_dl=DataLoader(server_ds,batch_size=BS,shuffle=False)
+server_dl=DataLoader(server_ds,batch_size=BS*16,shuffle=True)
 runs=0
 is_server=False
 
@@ -36,8 +36,9 @@ def serve_client() -> str | None:
         if is_server:
             f_name=os.path.join(FILE_DIR,'server.pt')
             if 'server.pt' not in os.listdir(FILE_DIR):
-                for data,_ in zip(iter(dl),range(100_000)):
+                for data,_ in zip(iter(server_dl),range(1_000_000)):
                     res.append(data)
+                res=[torch.concat([p[0] for p in res]),torch.concat([p[1] for p in res])]
                 is_server=False
         else:
             for data,_ in zip(iter(dl),range(num_data_batches-1)):
@@ -63,7 +64,7 @@ with gr.Blocks() as demo:
         set_server,
         inputs=[t],
     )
-demo.launch(server_port=SERVER_PORT,server_name='0.0.0.0')
+demo.launch(server_port=int(SERVER_PORT),server_name='0.0.0.0')
 print(f'data requests: {runs-1}')
 
 

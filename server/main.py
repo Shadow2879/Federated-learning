@@ -143,6 +143,7 @@ def test_run() -> None:
         enable_model_summary=True,
         logger=MLFlowLogger(
             MLFLOW_EXP_NAME,
+            tracking_uri=MLFLOW_TRACKING_URI,
             tags={'device':f'{MLFLOW_TAG}'},
             synchronous=False,
         )

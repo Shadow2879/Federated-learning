@@ -9,4 +9,5 @@ exp.ipynb
 **/lightning_logs/
 architecture.txt
 **/mlruns/
-**/data_gen/
+dataset/data_gen/
+/client/client
