@@ -15,8 +15,9 @@ def gen_var_path(var):
     path=get_path(var) 
     ensure_dir_exists(path)
     return path
+
 def get_var(key:str):
-    dotenv.load_dotenv('.envs')
+    dotenv.load_dotenv()
     var=os.environ.get(key)
     if isinstance(var,str):
         return var
@@ -28,6 +29,7 @@ def defaults(var:Any,type_:Literal['int']) -> int: ...
 def defaults(var:Any,type_:Literal['str','path','array']) -> str: ...
 @overload
 def defaults(var:Any,type_:Literal['bool']) -> bool: ...
+
 def defaults(var:Any,type_) -> int | str | bool:
     if var is None:
         match type_:
@@ -46,16 +48,17 @@ def defaults(var:Any,type_) -> int | str | bool:
     return var
 
 @overload
-def load_env_var(key:str,type_:Literal['int'])->int:
-    ...
+def load_env_var(key:str,type_:Literal['int']) -> int: ...
 @overload
-def load_env_var(key:str,type_:Literal['str','path','addr'])->str: ...
+def load_env_var(key:str,type_:Literal['bool']) -> bool: ...
 @overload
-def load_env_var(key:str,type_:Literal['array'],sep:str=',')->list[str]: ...
+def load_env_var(key:str,type_:Literal['str','path']) -> str: ...
 @overload
-def load_env_var(key:str,type_:Literal['addr'],sep:str=',',port_key:str='')->str: ...
+def load_env_var(key:str,type_:Literal['array'],sep:str=',') -> list[str]: ...
+@overload
+def load_env_var(key:str,type_:Literal['addr'],sep:str=',',port_key:str='') -> tuple[str,str]: ...
 
-def load_env_var(key:str,type_,sep:str=',',port_key:str='') -> int | str | list[str] | bool:
+def load_env_var(key:str,type_,sep:str=',',port_key:str='') -> int | str | list | bool | tuple:
     '''
     loads an env variable and transfroms it based on type_.
 
@@ -71,7 +74,7 @@ def load_env_var(key:str,type_,sep:str=',',port_key:str='') -> int | str | list[
 
                 if it is an array, the variable is returned as an array by using an appropriate separator as defined by arr_sep (defaults to empty list).
 
-                if it is an address, the variable along with its port are combined to give back an address.
+                if it is an address, the variable and the port is returned.
                 
         arr_sep (optional): the separator to use when splitting the array.
         port_key (optional): the envrion key which contains the port of the address.
@@ -99,8 +102,11 @@ def load_env_var(key:str,type_,sep:str=',',port_key:str='') -> int | str | list[
         case 'array':
             var=var.split(sep)
         case 'addr':
-            p=load_env_var(port_key,'str')
-            var+=':'+p
+            print(var)
+            p=var[-(str.index(var,':')):]
+            if port_key != "":
+                os.environ[port_key]=p
+            return var,p
         case 'path':
             var=gen_var_path(var)
         case default:

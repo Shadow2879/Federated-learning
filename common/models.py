@@ -6,7 +6,6 @@ from collections import OrderedDict
 import torch
 import torch.nn.functional as F
 from torchmetrics.classification import MulticlassAccuracy,MulticlassPrecision,MulticlassRecall
-from common.env_path_fns import load_env_var
 from common.connect import connect_to_gr_client
 import numpy as np
 import lightning as L
@@ -89,14 +88,15 @@ class LitEMNISTClassifier(L.LightningModule):
             metrics:list=[
                 MulticlassAccuracy,MulticlassPrecision,MulticlassRecall,
                 ],
-                output_classes: int=0,
+                output_classes: int=62,
                 loss_fn=torch.nn.MSELoss(),
+                batch_size=32,
                 fed_learning:bool=True):
         super().__init__()
         self.model=NNmodel(output_classes)
-        self.output_classes=output_classes if output_classes else load_env_var('OUTPUT_CLASSES','int')
+        self.output_classes=output_classes
         self.metrics=[i(self.output_classes,average='macro') for i in metrics]
-        self.batch_size=load_env_var('CLIENT_BATCH_SIZE','int')
+        self.batch_size=batch_size
         self.example_input_array=torch.Tensor(self.batch_size,1,28,28)
         self.loss_fn=loss_fn
         self.fed_learning=fed_learning

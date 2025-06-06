@@ -1,9 +1,8 @@
 '''
 Defines a lightning model in for classification tasks on 28x28 images
 '''
-import torch
+import torch,os,uvicorn,lightning as L,numpy as np,pandas as pd
 import gradio as gr
-import os,uvicorn
 from aggregator import agg_models
 import agg_strats
 from common.env_path_fns import load_env_var
@@ -14,9 +13,6 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from common.models import LitEMNISTClassifier,NNmodel,PartialEMNISTDataModule
 from torchmetrics.classification import MulticlassAccuracy,MulticlassRecall,MulticlassF1Score,MulticlassPrecision
-import lightning as L
-import numpy as np
-import pandas as pd
 from lightning.pytorch.loggers import MLFlowLogger
 
 torch.set_float32_matmul_precision('medium')
@@ -25,10 +21,9 @@ L.seed_everything(42,workers=True)
 UPLOAD_MODEL_DIR=load_env_var('AGG_SERVER_UPLOAD_MODEL_DIR','path')
 RUNS=load_env_var('AGG_SERVER_RUNS','int')
 UPDATE_FREQ=load_env_var('AGG_SERVER_UPDATE_FREQ','int')
-DATA_SERVER_ADDR=load_env_var('DATA_SERVER_ADDR','addr',port_key='DATASET_SERVER_PORT')
 OUTPUT_CLASSES=load_env_var('OUTPUT_CLASSES','int')
 GLOBAL_MODEL_DIR=load_env_var('AGG_SERVER_GLOBAL_MODEL_DIR','path')
-SERVER_PORT=load_env_var('AGG_SERVER_PORT','int')
+AGG_SERVER_ADDR,SERVER_PORT=load_env_var('AGG_SERVER_ADDR','addr',port_key='SERVER_PORT')
 DATA_DELAY=load_env_var('AGG_SERVER_CONNECTION_DELAY','int')
 DATA_TRIES=load_env_var('AGG_SERVER_CONNECTION_TRIES','int')
 DATA_LOC=load_env_var('AGG_SERVER_DATA_LOC','path')
@@ -36,8 +31,21 @@ DATA_BATCH_SIZE=load_env_var('AGG_SERVER_BATCH_SIZE','int')
 DATA_WORKERS=load_env_var('AGG_SERVER_DATA_WORKERS','int')
 MLFLOW_EXP_NAME=load_env_var('MLFLOW_EXP_NAME','str')
 MLFLOW_TAG=load_env_var('AGG_MLFLOW_TAG','str')
-# can possibly be loaded by default by MLFlowlogger when using key MLFLOW_TRACKING_URI
-# MLFLOW_SERVER=load_env_var('MLFLOW_SERVER_ADDR','str','MLFLOW_SERVER_PORT')
+MLFLOW_SERVER_PORT=load_env_var('MLFLOW_SERVER_PORT','str')
+DEPLOY=load_env_var('DEPLOY','bool')
+DEBUG=load_env_var('DEBUG_MODE','bool')
+DATA_SERVER_ADDR,DATA_SERVER_PORT=load_env_var('DATA_SERVER_ADDR','addr',port_key='DATASET_SERVER_PORT')
+MLFLOW_TRACKING_URI,MLFLOW_SERVER_PORT=load_env_var('MLFLOW_TRACKING_URI','addr',port_key='MLFLOW_SERVER_PORT')
+
+if DEPLOY:
+    print('configured to pull/push data from containers.')
+else:
+    src='http://localhost:'
+    print(f'configured to push/pull data from {src}')
+    DATA_SERVER_ADDR=src+DATA_SERVER_PORT
+    MLFLOW_TRACKING_URI=src+MLFLOW_SERVER_PORT
+    os.environ['MLFLOW_TRACKING_URI']=MLFLOW_TRACKING_URI
+    os.environ['DATA_SERVER_ADDR']=DATA_SERVER_ADDR
 
 model_ver=0
 run_ver=0
@@ -50,7 +58,7 @@ models={i:agg_models(
 models[0].add_global_model(g_model)
 gen_update_time=lambda :datetime.now()+timedelta(seconds=UPDATE_FREQ)
 g_update_time=gen_update_time()
-periodic_event_scheduler=BackgroundScheduler(
+background_event_scheduler=BackgroundScheduler(
     default_executor='threadpool',
     executors={'threadpool':ThreadPoolExecutor(10)})
 model_counts=pd.DataFrame(np.zeros(RUNS),columns=['uploaded models']).T
@@ -61,6 +69,9 @@ gr.set_static_paths(paths=[
     os.path.join(os.getcwd(),UPLOAD_MODEL_DIR)
 ])
 
+if DEBUG:
+    print(os.environ.items())
+    print(background_event_scheduler._executors)
 def update_model() ->None:
     global g_update_time,model_update_status
     time_to_update=g_update_time-datetime.now()
@@ -132,18 +143,17 @@ def test_run() -> None:
         enable_model_summary=True,
         logger=MLFlowLogger(
             MLFLOW_EXP_NAME,
-            tags={'device':'MLFLOW_TAG'},
+            tags={'device':f'{MLFLOW_TAG}'},
             synchronous=False,
         )
     )
     run_op[model_ver]=trainer.test(litmodel,datamodule=litdata)
-    
 
-jobid=periodic_event_scheduler.add_job(update_model,trigger='interval',seconds=1)
-periodic_event_scheduler.add_job(get_model_ver,trigger='interval',seconds=1)
-periodic_event_scheduler.add_job(get_model_weights,trigger='interval',seconds=1)
-periodic_event_scheduler.add_job(get_models,trigger='interval',seconds=1)
-periodic_event_scheduler.add_job(test_run,trigger='interval',seconds=1,max_instances=4)
+background_event_scheduler.add_job(update_model,trigger='interval',seconds=1)
+background_event_scheduler.add_job(get_model_ver,trigger='interval',seconds=1)
+background_event_scheduler.add_job(get_model_weights,trigger='interval',seconds=1)
+background_event_scheduler.add_job(get_models,trigger='interval',seconds=1)
+background_event_scheduler.add_job(test_run,trigger='interval',seconds=1,max_instances=4)
 
 with gr.Blocks() as demo:
     with gr.Row():
@@ -164,15 +174,14 @@ with gr.Blocks() as demo:
     with gr.Row():
         gr.TextArea(lambda:run_op,every=1,label='global model performance details')
         
-#needed for scheduler to stop at the end.
 @asynccontextmanager
 async def lifespan(app:FastAPI):
     print('starting server')
-    periodic_event_scheduler.start()
+    background_event_scheduler.start()
     yield
     print('stopping server')
-    periodic_event_scheduler.shutdown(wait=True)
+    background_event_scheduler.shutdown(wait=True)
 
 app=FastAPI(lifespan=lifespan)
 app=gr.mount_gradio_app(app,demo,path='/')
-uvicorn.run(app,host='0.0.0.0',port=SERVER_PORT)
+uvicorn.run(app,host='0.0.0.0',port=int(SERVER_PORT))

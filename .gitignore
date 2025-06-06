@@ -7,3 +7,6 @@ exp.ipynb
 **/models/
 /server/server
 **/lightning_logs/
+architecture.txt
+**/mlruns/
+**/data_gen/

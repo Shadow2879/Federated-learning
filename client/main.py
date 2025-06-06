@@ -11,19 +11,35 @@ from lightning.pytorch.loggers import MLFlowLogger
 torch.set_float32_matmul_precision('medium')
 L.seed_everything(42,workers=True)
 model_metrics={}
-DEBUG_MODE=load_env_var('DEBUG_MODE','int')
+DEBUG_MODE=load_env_var('DEBUG','int')
 TRAIN_TIME=load_env_var('CLIENT_TRAIN_DURATION','int')
 COMBINE_STEPS=load_env_var('CLIENT_COMBINE_STEPS','int')
 CLIENT_CONNECTION_TRIES=load_env_var('CLIENT_CONNECTION_TRIES','int')
 CLIENT_CONNECTION_DELAY=load_env_var('CLIENT_CONNECTION_DELAY','int')
 DS_LOC=load_env_var('CLIENT_DATA_LOC','path')
-DATA_SERVER_ADDR=load_env_var('DATA_SERVER_ADDR','addr','DATASET_SERVER_PORT')
 DATA_SPLITS=load_env_var('CLIENT_DATA_SPLITS','array')
 DATA_BATCH_SIZE=load_env_var('CLIENT_BATCH_SIZE','int')
 DATA_WORKERS=load_env_var('CLIENT_WORKERS','int')
-AGG_SERVER_ADDR=load_env_var('AGG_SERVER_ADDR','addr','AGG_SERVER_PORT')
+OUTPUT_CLASSES=load_env_var('OUTPUT_CLASSES','int')
 MLFLOW_TAG=load_env_var('CLIENT_MLFLOW_TAG','str')
 MLFLOW_EXP_NAME=load_env_var('MLFLOW_EXP_NAME','str')
+DEPLOY=load_env_var('DEPLOY','bool')
+DATA_SERVER_ADDR,DATASET_SERVER_PORT=load_env_var('DATA_SERVER_ADDR','addr',port_key='DATASET_SERVER_PORT')
+AGG_SERVER_ADDR,AGG_SERVER_PORT=load_env_var('AGG_SERVER_ADDR','addr',port_key='AGG_SERVER_PORT')
+MLFLOW_TRACKING_URI,MLFLOW_SERVER_PORT=load_env_var('MLFLOW_TRACKING_URI','addr',port_key='MLFLOW_SERVER_PORT')
+
+if DEPLOY:
+    print('configured to pull/push data from containers.')
+else:
+    src='http://localhost:'
+    print(f'configured to push/pull data from {src}')
+    DATA_SERVER_ADDR=src+DATASET_SERVER_PORT
+    AGG_SERVER_ADDR=src+AGG_SERVER_PORT
+    MLFLOW_TRACKING_URI=src+MLFLOW_SERVER_PORT
+    os.environ['MLFLOW_TRACKING_URI']=MLFLOW_TRACKING_URI
+    os.environ['DATA_SERVER_ADDR']=DATA_SERVER_ADDR
+    os.environ['AGG_SERVER_ADDR']=AGG_SERVER_ADDR
+
 
 data=PartialEMNISTDataModule(
     DS_LOC,
