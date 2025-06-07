@@ -208,7 +208,7 @@ class PartialEMNISTDataModule(L.LightningDataModule):
             shutil.move(data_file,self.data_file)
             ds=CustDataset(torch.load(self.data_file))
             self.train,self.val,self.test=random_split(ds,
-                                                    lengths=self.splits.tolist(),
+                                                    lengths=self.splits,
                                                     generator=self.generator)
             self.prepared=True
     

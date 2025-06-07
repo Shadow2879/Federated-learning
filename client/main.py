@@ -65,7 +65,7 @@ g_model_sdict=lambda :torch.load(g_model_file())
 c_model=LitEMNISTClassifier(g_model_file(),g_model_ver(),output_classes=OUTPUT_CLASSES,batch_size=AGG_SERVER_BATCH_SIZE)
 logger=MLFlowLogger(MLFLOW_EXP_NAME,
                     tracking_uri=MLFLOW_TRACKING_URI,
-                    tags={'device':MLFLOW_TAG,'cuda':bool(torch.cuda.device_count())},
+                    tags={'device':MLFLOW_TAG,'cuda':str(torch.cuda.device_count())},
                     synchronous=False,)
 
 for i in range(COMBINE_STEPS):
@@ -76,6 +76,8 @@ for i in range(COMBINE_STEPS):
                 ModelSummary(max_depth=-1),
                 Timer(duration=timedelta(seconds=TRAIN_TIME),interval="step")
                 ],
+                log_every_n_steps=1,
+                num_sanity_val_steps=2,
                 logger=logger
         )
         trainer.fit(c_model,datamodule=data)
