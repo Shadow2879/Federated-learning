@@ -203,7 +203,7 @@ class PartialEMNISTDataModule(L.LightningDataModule):
                 tries=self.tries,
                 download_files=self.data_loc)
             data_file=self.client.predict(api_name='/serve_client')
-            self.data_file=os.path.join(self.data_loc,data_file.split('/')[-1])
+            self.data_file=os.path.join(self.data_loc,(data_file.split('/')[-2]+'.pt'))
             print(f'moving from {data_file} to {self.data_file}')
             shutil.move(data_file,self.data_file)
             ds=CustDataset(torch.load(self.data_file))

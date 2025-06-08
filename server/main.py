@@ -89,12 +89,12 @@ def get_model_weights() ->str:
     global model_ver
     f_loc=os.path.join(GLOBAL_MODEL_DIR,f'{model_ver}.pth')
     torch.save(g_model.state_dict(),f_loc)
-    print(f"current modelfile: {f_loc}")
+    print(f"current modelfile: {f_loc}",end='\n')
     return f_loc
 
 def get_model_ver()-> int:
     global model_ver
-    print(f'model_version:{model_ver}')
+    print(f'model_version:{model_ver}',end=' ')
     return model_ver
 
 def upload_model(model_loc:str,counts:int) -> None:

@@ -17,9 +17,11 @@ class  agg_models():
 
     def add_client_model(self,model_path:str,steps:int | None=None) -> None:
         new_mod=NNmodel(self.classes)
-        shutil.move(model_path,os.path.join(self.dir,f'{len(self.models)}.pth'))
+        new_path=os.path.join(self.dir,f'{model_path.split("/")[-2]}.pth')
+        print(f'moving client model from:{model_path} to {new_path}')
+        shutil.move(model_path,new_path)
         new_mod.load_state_dict(torch.load(
-            os.path.join(self.dir,f'{len(self.models)}.pth'),
+            new_path,
             weights_only=True
             ))
         self.models.append(new_mod)
