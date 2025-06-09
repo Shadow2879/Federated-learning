@@ -47,37 +47,44 @@ def defaults(var:Any,type_) -> int | str | bool:
     return var
 
 @overload
-def load_env_var(key:str,type_:Literal['int']) -> int: ...
+def load_env_var(key:str,type_:Literal['int']) -> int: 
+    '''
+    Loads a .env variable, converts it into an `int` and returns it.
+    '''
+    ...
 @overload
-def load_env_var(key:str,type_:Literal['bool']) -> bool: ...
+def load_env_var(key:str,type_:Literal['bool']) -> bool: 
+    '''
+    Loads a .env variable, converts it into a `bool` and returns it.
+    '''
+    ...
 @overload
-def load_env_var(key:str,type_:Literal['str','path']) -> str: ...
+def load_env_var(key:str,type_:Literal['path']) -> str: 
+    '''
+    Loads a .env variable, joins it with `os.getcwd()`.
+    A directory at that path is created and the path is returned. 
+    '''
+    ...
 @overload
-def load_env_var(key:str,type_:Literal['array'],sep:str=',') -> list[str]: ...
+def load_env_var(key:str,type_:Literal['str']) -> str:
+    '''
+    Loads a .env variable and returns it.
+    '''
+    ...
 @overload
-def load_env_var(key:str,type_:Literal['addr'],sep:str=',',port_key:str='') -> tuple[str,str]: ...
+def load_env_var(key:str,type_:Literal['array'],sep:str=',') -> list[str]: 
+    '''
+    Loads a .env variable, splits it based on `sep` and returns the `list`.
+    '''
+    ...
+@overload
+def load_env_var(key:str,type_:Literal['addr'],sep:str=',',port_key:str='') -> tuple[str,str]: 
+    '''
+    Loads a .env variable, creates another variable with `port_key=addr port` and returns the full address along as well as the port.
+    '''
+    ...
 
 def load_env_var(key:str,type_,sep:str=',',port_key:str='') -> int | str | list | bool | tuple:
-    '''
-    loads an env variable and transfroms it based on type_.
-
-    Params:
-        key: the name of the environment variable.
-        type_: the type_ of the variable. This determines how the variable is transformed before being returned.
-
-                if it is an integer, it is casted to int and returned (defaults to 1).
-
-                if it is a path, the path is merged with the current working directory and a folder is created at the location of the merged path (defaults to cwd).
-
-                if it is a string, the variable is returned as is (defaults to an empty string).
-
-                if it is an array, the variable is returned as an array by using an appropriate separator as defined by arr_sep (defaults to empty list).
-
-                if it is an address, the variable and the port is returned.
-                
-        arr_sep (optional): the separator to use when splitting the array.
-        port_key (optional): the envrion key which contains the port of the address.
-    '''
     try:
         var=get_var(key)
     except KeyError as e:

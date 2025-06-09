@@ -5,7 +5,8 @@ from torch import nn
 from collections import OrderedDict
 import torch, numpy as np, lightning as L, shutil, os
 import torch.nn.functional as F
-from torchmetrics.classification import MulticlassAccuracy,MulticlassPrecision,MulticlassRecall
+import torchmetrics
+from torchmetrics import classification
 from common.connect import connect_to_gr_client
 from torch.utils.data import random_split,DataLoader,Dataset
 from typing import Sequence
@@ -76,6 +77,18 @@ class NNmodel(nn.Module):
         res=pow(sum([p.sum() for p in res.parameters()]),1/distance_metric)
         return res
     
+def default_model_metrics(output_classes:int,**multiclass_metrics_kwargs) -> list[torchmetrics.Metric]:
+    multiclass_metrics=[
+        classification.MulticlassAccuracy,
+        classification.MulticlassRecall,
+        classification.MulticlassF1Score,
+        classification.MulticlassPrecision,
+        classification.MulticlassSpecificity
+    ]
+    metrics=[]
+    for i in multiclass_metrics:
+        metrics.append(i(output_classes,**multiclass_metrics_kwargs))
+    return metrics
 class LitEMNISTClassifier(L.LightningModule):
     '''
     The lightning Module for 28x28 image classification
@@ -84,9 +97,7 @@ class LitEMNISTClassifier(L.LightningModule):
             self,
             model_path:str,
             model_ver:int,
-            metrics:list=[
-                MulticlassAccuracy,MulticlassPrecision,MulticlassRecall,
-                ],
+            metrics:list[torchmetrics.Metric] | None=None,
                 output_classes: int=62,
                 loss_fn=torch.nn.CrossEntropyLoss(reduction='mean'),
                 batch_size=32,
@@ -94,7 +105,10 @@ class LitEMNISTClassifier(L.LightningModule):
         super().__init__()
         self.model=NNmodel(output_classes)
         self.output_classes=output_classes
-        self.metrics=[i(self.output_classes,average='macro') for i in metrics]
+        if metrics is None:
+            self.metrics=default_model_metrics(output_classes,average='macro')
+        else:
+            self.metrics=metrics#[i(self.output_classes,average='macro') for i in metrics]
         self.batch_size=batch_size
         self.example_input_array=torch.Tensor(self.batch_size,1,28,28)
         self.loss_fn=loss_fn
@@ -182,6 +196,7 @@ class PartialEMNISTDataModule(L.LightningDataModule):
             tries:int=10,
             batch_size:int=32,
             cpus:int=1,
+            data_api:str='/serve_client',
             ):
         super().__init__()
         self.data_loc=data_loc
@@ -194,6 +209,7 @@ class PartialEMNISTDataModule(L.LightningDataModule):
         self.delay=delay
         self.tries=tries
         self.client_addr=client_addr
+        self.data_api=data_api
 
     def prepare_data(self):
         if not self.prepared:
@@ -202,13 +218,13 @@ class PartialEMNISTDataModule(L.LightningDataModule):
                 delay=self.delay,
                 tries=self.tries,
                 download_files=self.data_loc)
-            data_file=self.client.predict(api_name='/serve_client')
+            data_file=self.client.predict(api_name=self.data_api)
             self.data_file=os.path.join(self.data_loc,(data_file.split('/')[-2]+'.pt'))
             print(f'moving from {data_file} to {self.data_file}')
             shutil.move(data_file,self.data_file)
             ds=CustDataset(torch.load(self.data_file))
             self.train,self.val,self.test=random_split(ds,
-                                                    lengths=self.splits,
+                                                    lengths=self.splits, # type: ignore
                                                     generator=self.generator)
             self.prepared=True
     

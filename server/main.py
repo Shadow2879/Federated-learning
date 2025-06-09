@@ -12,7 +12,6 @@ from apscheduler.executors.pool import ThreadPoolExecutor
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from common.models import LitEMNISTClassifier,NNmodel,PartialEMNISTDataModule
-from torchmetrics.classification import MulticlassAccuracy,MulticlassRecall,MulticlassF1Score,MulticlassPrecision
 from lightning.pytorch.loggers import MLFlowLogger
 
 torch.set_float32_matmul_precision('medium')
@@ -72,6 +71,16 @@ gr.set_static_paths(paths=[
 if DEBUG:
     print(os.environ.items())
     print(background_event_scheduler._executors)
+
+litdata=PartialEMNISTDataModule(DATA_LOC,
+                                DATA_SERVER_ADDR,
+                                splits=[0.,0.,1.],
+                                delay=DATA_DELAY,
+                                tries=DATA_TRIES,
+                                batch_size=DATA_BATCH_SIZE,
+                                cpus=DATA_WORKERS,
+                                data_api='/serve_server')
+
 def update_model() ->None:
     global g_update_time,model_update_status
     time_to_update=g_update_time-datetime.now()
@@ -116,7 +125,7 @@ def get_models() -> None:
         model_counts[i]=len(models[i].models)
 
 def test_run() -> None:
-    global model_ver,run_op,run_ver
+    global model_ver,run_op,run_ver,litdata
     if run_ver>model_ver:
         return
     else:
@@ -124,19 +133,8 @@ def test_run() -> None:
         run_ver+=1
     litmodel=LitEMNISTClassifier(get_model_weights(),
                         model_ver,
-                        metrics=[MulticlassAccuracy,
-                                 MulticlassF1Score,
-                                 MulticlassPrecision,
-                                 MulticlassRecall],
                         output_classes=OUTPUT_CLASSES,
                         fed_learning=True,)
-    litdata=PartialEMNISTDataModule(DATA_LOC,
-                                    DATA_SERVER_ADDR,
-                                    splits=[0.,0.,1.],
-                                    delay=DATA_DELAY,
-                                    tries=DATA_TRIES,
-                                    batch_size=DATA_BATCH_SIZE,
-                                    cpus=DATA_WORKERS)
     trainer=L.Trainer(
         max_epochs=1,
         enable_progress_bar=True,
