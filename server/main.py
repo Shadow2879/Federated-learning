@@ -183,4 +183,6 @@ async def lifespan(app:FastAPI):
 
 app=FastAPI(lifespan=lifespan)
 app=gr.mount_gradio_app(app,demo,path='/')
-uvicorn.run(app,host='0.0.0.0',port=int(SERVER_PORT))
+
+if __name__=='__main__':
+    uvicorn.run(app,host='0.0.0.0',port=int(SERVER_PORT))

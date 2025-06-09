@@ -64,12 +64,18 @@ def serve_server(progress=gr.Progress(track_tqdm=True)) -> str | None:
     runs[1]+=1
     return f_name
 
+def get_client_runs():
+    return runs[0].item()
+
+def get_server_runs():
+    return runs[1].item()
+
 with gr.Blocks() as demo:
     with gr.Row():
         with gr.Column():
             client_file=gr.File(None,file_count='single',label='data_client')
         with gr.Column():
-            client_runs=gr.Number(lambda:runs[0].item(),every=1,label='client data requests')
+            client_runs=gr.Number(get_client_runs,every=1,label='client data requests')
     with gr.Row():
         client_btn=gr.Button(value='get client data')
         client_btn.click(
@@ -82,7 +88,7 @@ with gr.Blocks() as demo:
         with gr.Column():
             server_file=gr.File(None,file_count='single',label='data_server')
         with gr.Column():
-            server_runs=gr.Number(lambda:runs[1].item(),every=1,label='server data requests')
+            server_runs=gr.Number(get_server_runs,every=1,label='server data requests')
     with gr.Row():
         server_btn=gr.Button(value='get server data')
         server_btn.click(
@@ -90,9 +96,9 @@ with gr.Blocks() as demo:
             inputs=None,
             outputs=[server_file]
         )
-demo.launch(server_port=int(SERVER_PORT),server_name='0.0.0.0')
+        
+demo.queue().launch(server_port=int(SERVER_PORT),server_name='0.0.0.0')
 print(f'server data requests: {runs[0]}, client data requests: {runs[1]}')
-
 
 #clear previously generated data files if any
 for file_name in os.listdir(FILE_DIR):
