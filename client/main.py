@@ -20,7 +20,7 @@ DATA_SPLITS=load_env_var('CLIENT_DATA_SPLITS','array')
 DATA_WORKERS=load_env_var('CLIENT_WORKERS','int')
 OUTPUT_CLASSES=load_env_var('OUTPUT_CLASSES','int')
 MLFLOW_TAG=load_env_var('CLIENT_MLFLOW_TAG','str')
-AGG_SERVER_BATCH_SIZE=load_env_var('AGG_SERVER_BATCH_SIZE','int')
+CLIENT_BATCH_SIZE=load_env_var('CLIENT_BATCH_SIZE','int')
 MLFLOW_EXP_NAME=load_env_var('MLFLOW_EXP_NAME','str')
 DEPLOY=load_env_var('DEPLOY','bool')
 DATA_SERVER_ADDR,DATASET_SERVER_PORT=load_env_var('DATA_SERVER_ADDR','addr',port_key='DATASET_SERVER_PORT')
@@ -46,7 +46,7 @@ data=PartialEMNISTDataModule(
     DATA_SPLITS,
     delay=CLIENT_CONNECTION_DELAY,
     tries=CLIENT_CONNECTION_TRIES,
-    batch_size=AGG_SERVER_BATCH_SIZE,
+    batch_size=CLIENT_BATCH_SIZE,
     cpus=DATA_WORKERS
 )
 server=connect_to_gr_client(
@@ -62,7 +62,7 @@ model_metrics={}
 g_model_ver=lambda :server.predict(api_name='/get_model_ver')
 g_model_file=lambda :server.predict(api_name='/get_model_weights')
 g_model_sdict=lambda :torch.load(g_model_file())
-c_model=LitEMNISTClassifier(g_model_file(),g_model_ver(),output_classes=OUTPUT_CLASSES,batch_size=AGG_SERVER_BATCH_SIZE)
+c_model=LitEMNISTClassifier(g_model_file(),g_model_ver(),output_classes=OUTPUT_CLASSES,batch_size=CLIENT_BATCH_SIZE)
 logger=MLFlowLogger(MLFLOW_EXP_NAME,
                     tracking_uri=MLFLOW_TRACKING_URI,
                     tags={'device':MLFLOW_TAG,'cuda':str(torch.cuda.device_count())},
@@ -91,7 +91,7 @@ for i in range(COMBINE_STEPS):
         c_model.model.load_state_dict(g_model_sdict())
         c_model.model_ver=g_model_ver()
 
-final_model=LitEMNISTClassifier(g_model_file(),g_model_ver(),output_classes=OUTPUT_CLASSES,batch_size=AGG_SERVER_BATCH_SIZE)
+final_model=LitEMNISTClassifier(g_model_file(),g_model_ver(),output_classes=OUTPUT_CLASSES,batch_size=CLIENT_BATCH_SIZE)
 trainer=L.Trainer(logger=logger)
 trainer.test(final_model,datamodule=data)
 model_metrics[f'{final_model.model_ver}_test']=trainer.callback_metrics

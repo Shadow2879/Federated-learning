@@ -1,4 +1,5 @@
 FROM pytorch/pytorch:2.7.1-cuda12.6-cudnn9-runtime
-COPY ./ /workspace/
+COPY ./.env /workspace/
 RUN pip install -r requirements.txt
-CMD python main.py && python run_agg.py
+COPY ./ /workspace/
+CMD python main.py

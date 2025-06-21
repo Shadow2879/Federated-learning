@@ -59,6 +59,8 @@ services:
     
 volumes:
   emnist_dataset:
+    external: true
 
 networks:
   fed:
+    name: fed
