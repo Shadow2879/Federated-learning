@@ -55,6 +55,7 @@ services:
       - fed
     ports:
       - ${AGG_SERVER_PORT}:${AGG_SERVER_PORT}
+      - ${MLFLOW_SERVER_PORT}:${MLFLOW_SERVER_PORT}
     
 volumes:
   emnist_dataset:
