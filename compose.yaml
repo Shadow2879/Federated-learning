@@ -5,7 +5,7 @@ services:
     container_name: dataset
     image: emnist_data_gen:${FED_VERSION}
     cpus: ${DATASET_CPUS}
-    stop_grace_period: 3m
+    stop_grace_period: 1m
     volumes:
       - emnist_dataset:/workspace/datasets
     ports:
@@ -21,7 +21,7 @@ services:
       replicas: ${CLIENT_CPU_REPLICAS}
     image: emnist_client:${FED_VERSION}
     cpus: ${CLIENT_CPUS}
-    stop_grace_period: 3m
+    stop_grace_period: 1m
     depends_on:
       - dataset_server
       - agg_server
@@ -37,7 +37,7 @@ services:
     image: emnist_client:${FED_VERSION}
     cpus: ${CLIENT_CPUS}
     gpus: all
-    stop_grace_period: 3m
+    stop_grace_period: 1m
     depends_on:
       - dataset_server
       - agg_server
@@ -50,13 +50,13 @@ services:
     container_name: emnist_server
     image: emnist_server:${FED_VERSION}
     cpus: ${AGG_SERVER_CPUS}
-    stop_grace_period: 3m
+    stop_grace_period: 1m
     networks:
       - fed
+      - local
     ports:
       - ${AGG_SERVER_PORT}:${AGG_SERVER_PORT}
       - ${MLFLOW_SERVER_PORT}:${MLFLOW_SERVER_PORT}
-    
 volumes:
   emnist_dataset:
     external: true
@@ -64,3 +64,6 @@ volumes:
 networks:
   fed:
     name: fed
+  local:
+    name: local
+    driver: bridge

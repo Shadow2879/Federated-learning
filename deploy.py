@@ -76,4 +76,4 @@ if __name__=="__main__":
             print(f'copied ./common to {path}')
             shutil.copytree('./common',path)
     if DEPLOY and not MOCK:
-        subprocess.call(["docker","compose","up"])
+        subprocess.call(["docker","compose","build","--parallel"])

@@ -179,7 +179,7 @@ async def lifespan(app:FastAPI):
     background_event_scheduler.start()
     yield
     print('stopping server')
-    background_event_scheduler.shutdown(wait=True)
+    background_event_scheduler.shutdown(wait=False)
 
 app=FastAPI(lifespan=lifespan)
 app=gr.mount_gradio_app(app,demo,path='/')
