@@ -63,9 +63,10 @@ g_model_ver=lambda :server.predict(api_name='/get_model_ver')
 g_model_file=lambda :server.predict(api_name='/get_model_weights')
 g_model_sdict=lambda :torch.load(g_model_file())
 c_model=LitEMNISTClassifier(g_model_file(),g_model_ver(),output_classes=OUTPUT_CLASSES,batch_size=CLIENT_BATCH_SIZE)
+data.prepare_data()
 logger=MLFlowLogger(MLFLOW_EXP_NAME,
                     tracking_uri=MLFLOW_TRACKING_URI,
-                    tags={'device':MLFLOW_TAG,'cuda':str(torch.cuda.device_count())},
+                    tags={'device':MLFLOW_TAG,'cuda':str(torch.cuda.device_count()),'id':data.data_file[:-3]},
                     synchronous=False,)
 
 for i in range(COMBINE_STEPS):

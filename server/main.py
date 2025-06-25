@@ -152,7 +152,7 @@ background_event_scheduler.add_job(update_model,trigger='interval',seconds=1)
 background_event_scheduler.add_job(get_model_ver,trigger='interval',seconds=1)
 background_event_scheduler.add_job(get_model_weights,trigger='interval',seconds=1)
 background_event_scheduler.add_job(get_models,trigger='interval',seconds=1)
-background_event_scheduler.add_job(test_run,trigger='interval',seconds=1,max_instances=4)
+background_event_scheduler.add_job(test_run,trigger='interval',seconds=1,max_instances=5)
 
 with gr.Blocks() as demo:
     with gr.Row():

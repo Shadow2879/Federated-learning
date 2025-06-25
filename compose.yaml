@@ -20,7 +20,7 @@ services:
       mode: replicated
       replicas: ${CLIENT_CPU_REPLICAS}
     image: emnist_client:${FED_VERSION}
-    cpus: ${CLIENT_CPUS}
+    cpus: ${CPU_CLIENT_CPUS}
     stop_grace_period: 1m
     depends_on:
       - dataset_server
@@ -35,7 +35,7 @@ services:
       mode: replicated
       replicas: ${CLIENT_GPU_REPLICAS}
     image: emnist_client:${FED_VERSION}
-    cpus: ${CLIENT_CPUS}
+    cpus: ${GPU_CLIENT_CPUS}
     gpus: all
     stop_grace_period: 1m
     depends_on:
@@ -50,6 +50,7 @@ services:
     container_name: emnist_server
     image: emnist_server:${FED_VERSION}
     cpus: ${AGG_SERVER_CPUS}
+    gpus: all
     stop_grace_period: 1m
     networks:
       - fed

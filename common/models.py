@@ -108,7 +108,7 @@ class LitEMNISTClassifier(L.LightningModule):
         if metrics is None:
             self.metrics=default_model_metrics(output_classes,average='macro')
         else:
-            self.metrics=metrics#[i(self.output_classes,average='macro') for i in metrics]
+            self.metrics=metrics
         self.batch_size=batch_size
         self.example_input_array=torch.Tensor(self.batch_size,1,28,28)
         self.loss_fn=loss_fn
